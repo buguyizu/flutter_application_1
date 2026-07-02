@@ -1,0 +1,56 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Flutter App (Windows)",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run",
+				"-d",
+				"windows"
+			],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "Run Flutter App (Chrome)",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run",
+				"-d",
+				"chrome"
+			],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "Run Flutter App (Chrome HTML)",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run",
+				"-d",
+				"chrome",
+				"--web-renderer",
+				"html"
+			],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "Run Flutter App (Chrome Local Web Resources)",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run",
+				"-d",
+				"chrome",
+				"--no-web-resources-cdn"
+			],
+			"isBackground": true,
+			"group": "build"
+		}
+	]
+}
