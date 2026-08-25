@@ -3,8 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 class ClockPainter extends CustomPainter {
-  ClockPainter(this.now);
-
   final DateTime now;
   final List<String> earthBranches = const [
     '子',
@@ -50,6 +48,7 @@ class ClockPainter extends CustomPainter {
     '十一月',
     '十二月',
   ];
+  ClockPainter(this.now);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -62,14 +61,13 @@ class ClockPainter extends CustomPainter {
     // 1. 最外层：月份圈
     _drawMonths(canvas, center, maxRadius);
 
-    // 2. 年天数圈 - 位于月份圈内侧（365/366 天）
+    // 2. 周数圈 - 位于月份圈内侧（每年52周）
     double dayOfYearRadius = maxRadius * 0.955;
-    _drawDaysOfYear(canvas, center, dayOfYearRadius);
+    _drawWeeks(canvas, center, dayOfYearRadius);
 
-    // 3. 周数圈 (一年52周) - 位于年天数圈内侧
-    // 天数圈较薄，保留间距避免视觉重叠
-    double weekRadius = maxRadius * 0.90;
-    _drawWeeks(canvas, center, weekRadius);
+    // 3. 年天数圈 - 位于周数圈内侧（365/366天）
+    double weekRadius = maxRadius * 0.91;
+    _drawDaysOfYear(canvas, center, weekRadius);
 
     // 3. 24小时表盘 (原内容作为核心) - 位于月份圈内侧
     double hourRadius = maxRadius * 0.86;
@@ -88,7 +86,7 @@ class ClockPainter extends CustomPainter {
     _drawNumbers(canvas, center, hourRadius * 0.91);
 
     // 4. 地支
-    _drawEarthBranches(canvas, center, hourRadius * 0.70);
+    _drawEarthBranches(canvas, center, hourRadius * 0.68);
 
     // 5. 经络
     _drawMeridians(canvas, center, hourRadius * 0.56);
@@ -149,7 +147,7 @@ class ClockPainter extends CustomPainter {
       }
 
       textPainter.text = TextSpan(
-        text: '${i + 1}',
+        text: i + 1 == currentWeek ? '${i + 1}周' : '${i + 1}',
         style: TextStyle(
           color: (i + 1 == currentWeek) ? Colors.blue[800] : Colors.black38,
           fontSize: 7,
@@ -260,7 +258,7 @@ class ClockPainter extends CustomPainter {
 
       if (showLabel) {
         textPainter.text = TextSpan(
-          text: '$dayInMonth',
+          text: isCurrentDay ? '$dayNumber天' : '$dayNumber',
           style: TextStyle(
             color: isCurrentDay ? Colors.blue[800] : Colors.black54,
             fontSize: isCurrentDay ? 9 : 7,
@@ -410,7 +408,12 @@ class ClockPainter extends CustomPainter {
 
     canvas.drawCircle(center, radius, outer);
     canvas.drawCircle(center, radius, outline);
-    canvas.drawCircle(center, radius * 0.70, inline1);
+    canvas.drawCircle(center, radius * 0.68, inline1);
+    final Paint emptyBranchRing = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 24
+      ..color = const Color(0xFFD5DBDB).withOpacity(0.45);
+    canvas.drawCircle(center, radius * 0.78, emptyBranchRing);
 
     // 高亮当前地支 (内层经络也一起高亮?)
     // 计算当前地支索引 (23:00-01:00 为子(0), 01:00-03:00 为丑(1)...)
@@ -430,7 +433,7 @@ class ClockPainter extends CustomPainter {
       ..color = const Color(0xFFF1C40F).withOpacity(0.5); // 金黄色高亮
 
     canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius * 0.70),
+      Rect.fromCircle(center: center, radius: radius * 0.68),
       startAngleRad,
       sweepAngleRad,
       false,
@@ -493,9 +496,39 @@ class ClockPainter extends CustomPainter {
     // 地支刻度
     for (int i = 0; i < 12; i += 1) {
       final angle = _degToRad(i * 30 + 180 + 15);
-      final start = _pointOnCircle(center, radius * 0.70 + 18, angle);
-      final end = _pointOnCircle(center, radius * 0.70 - 18, angle);
+      final start = _pointOnCircle(center, radius * 0.68 + 18, angle);
+      final end = _pointOnCircle(center, radius * 0.68 - 18, angle);
       canvas.drawLine(start, end, branchPaint);
+
+      final emptyRingStart = _pointOnCircle(center, radius * 0.78 + 12, angle);
+      final emptyRingEnd = _pointOnCircle(center, radius * 0.78 - 12, angle);
+      canvas.drawLine(emptyRingStart, emptyRingEnd, branchPaint);
+    }
+
+    final emptyRingTextPainter = TextPainter(
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+    for (int i = 0; i < 12; i += 1) {
+      final angle = _degToRad(i * 30 + 180 + 30);
+      final position = _pointOnCircle(center, radius * 0.78, angle);
+      emptyRingTextPainter.text = TextSpan(
+        text: '${i + 1}',
+        style: const TextStyle(
+          color: Color(0xFF5D6D7E),
+          fontSize: 10,
+          fontWeight: FontWeight.normal,
+        ),
+      );
+      emptyRingTextPainter.layout();
+      emptyRingTextPainter.paint(
+        canvas,
+        position -
+            Offset(
+              emptyRingTextPainter.width / 2,
+              emptyRingTextPainter.height / 2,
+            ),
+      );
     }
   }
 
@@ -521,10 +554,7 @@ class ClockPainter extends CustomPainter {
           TextSpan(text: earthBranches[branchIndex]),
           const TextSpan(
             text: '时',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
         ],
       );
