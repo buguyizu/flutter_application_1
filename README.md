@@ -77,3 +77,7 @@ flutter doctor
 ## 参考
 
 - [Flutter 文档](https://docs.flutter.dev/)
+
+## 页面截图
+
+![时间旋流页面](assets/time-flow-page.png)
