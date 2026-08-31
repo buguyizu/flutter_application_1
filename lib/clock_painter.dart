@@ -2,8 +2,60 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+enum ClockDialRing {
+  months,
+  weeks,
+  days,
+  hours,
+  branchNumbers,
+  branches,
+  meridians,
+  minutes,
+}
+
+extension ClockDialRingMetrics on ClockDialRing {
+  double radiusFor(double outerRadius) {
+    final hourRadius = outerRadius * 0.86;
+    return switch (this) {
+      ClockDialRing.months => outerRadius,
+      ClockDialRing.weeks => outerRadius * 0.975 - 7,
+      ClockDialRing.days => outerRadius * 0.925,
+      ClockDialRing.hours => hourRadius * 0.91,
+      ClockDialRing.branchNumbers => hourRadius * 0.68 + 30,
+      ClockDialRing.branches => hourRadius * 0.68,
+      ClockDialRing.meridians => hourRadius * 0.56,
+      ClockDialRing.minutes => hourRadius * 0.45 + 12,
+    };
+  }
+
+  double get hitTolerance => switch (this) {
+    ClockDialRing.months => 10,
+    ClockDialRing.weeks => 7,
+    ClockDialRing.days => 5,
+    ClockDialRing.hours => 14,
+    ClockDialRing.branchNumbers => 12,
+    ClockDialRing.branches => 18,
+    ClockDialRing.meridians => 15,
+    ClockDialRing.minutes => 7,
+  };
+
+  double get hoverWidth => switch (this) {
+    ClockDialRing.months => 22,
+    ClockDialRing.weeks => 16,
+    ClockDialRing.days => 10,
+    ClockDialRing.hours => 28,
+    ClockDialRing.branchNumbers => 26,
+    ClockDialRing.branches => 38,
+    ClockDialRing.meridians => 32,
+    ClockDialRing.minutes => 12,
+  };
+}
+
 class ClockPainter extends CustomPainter {
   final DateTime now;
+  final ClockDialRing? hoveredRing;
+  final bool isBranchNumbersRotating;
+  final double branchNumbersRotation;
   final List<String> earthBranches = const [
     '子',
     '丑',
@@ -34,6 +86,21 @@ class ClockPainter extends CustomPainter {
     '三焦经',
   ];
 
+  static const List<String> yakshaGeneralsByDialPosition = [
+    '招杜罗',
+    '真达罗',
+    '摩虎罗',
+    '波夷罗',
+    '因达罗',
+    '珊底罗',
+    '頞你罗',
+    '安底罗',
+    '迷企罗',
+    '伐折罗',
+    '宫毗罗',
+    '毗羯罗',
+  ];
+
   final List<String> months = const [
     '一月',
     '二月',
@@ -48,7 +115,12 @@ class ClockPainter extends CustomPainter {
     '十一月',
     '十二月',
   ];
-  ClockPainter(this.now);
+  ClockPainter(
+    this.now, {
+    this.hoveredRing,
+    this.isBranchNumbersRotating = false,
+    this.branchNumbersRotation = 0,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -62,11 +134,11 @@ class ClockPainter extends CustomPainter {
     _drawMonths(canvas, center, maxRadius);
 
     // 2. 周数圈 - 位于月份圈内侧（每年52周）
-    double dayOfYearRadius = maxRadius * 0.955;
+    double dayOfYearRadius = maxRadius * 0.975;
     _drawWeeks(canvas, center, dayOfYearRadius);
 
     // 3. 年天数圈 - 位于周数圈内侧（365/366天）
-    double weekRadius = maxRadius * 0.91;
+    double weekRadius = maxRadius * 0.925;
     _drawDaysOfYear(canvas, center, weekRadius);
 
     // 3. 24小时表盘 (原内容作为核心) - 位于月份圈内侧
@@ -80,6 +152,9 @@ class ClockPainter extends CustomPainter {
 
     // 背景与外框 (基于 hourRadius)
     _drawDial(canvas, center, hourRadius);
+    if (isBranchNumbersRotating) {
+      _drawBranchAndGeneralCelebration(canvas, center, maxRadius);
+    }
 
     // 刻度与数字
     _drawTicks(canvas, center, hourRadius);
@@ -97,8 +172,169 @@ class ClockPainter extends CustomPainter {
     // 6. 小秒盘
     _drawSecondsDial(canvas, secondsCenter, secondsRadius);
 
+    if (isBranchNumbersRotating) {
+      _drawBranchAndGeneralSpotlight(canvas, center, maxRadius);
+    }
+    _drawHoveredRing(canvas, center, maxRadius);
+
     // 指针
     _drawHands(canvas, center, hourRadius, secondsCenter, secondsRadius);
+
+    canvas.drawCircle(center, 6, Paint()..color = const Color(0xFF8E44AD));
+    if (isBranchNumbersRotating) {
+      _drawFeaturedEarthBranches(canvas, center, hourRadius * 0.68);
+      _drawFeaturedYakshaGenerals(canvas, center, hourRadius);
+    }
+  }
+
+  void _drawHoveredRing(Canvas canvas, Offset center, double radius) {
+    if (hoveredRing != null) {
+      _drawRingGlow(canvas, center, radius, hoveredRing!);
+    }
+  }
+
+  void _drawRingGlow(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    ClockDialRing ring,
+  ) {
+    final ringRadius = ring.radiusFor(radius);
+    final ringWidth = ring.hoverWidth;
+
+    canvas.drawCircle(
+      center,
+      ringRadius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = ringWidth
+        ..color = const Color(0xFFFFD166).withValues(alpha: 0.36)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    );
+  }
+
+  void _drawBranchAndGeneralCelebration(
+    Canvas canvas,
+    Offset center,
+    double outerRadius,
+  ) {
+    final branchRadius = ClockDialRing.branches.radiusFor(outerRadius);
+    final generalRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
+    final bandRadius = (branchRadius + generalRadius) / 2;
+    final bandWidth = generalRadius - branchRadius + 40;
+    final bandRect = Rect.fromCircle(center: center, radius: bandRadius);
+    final phase = branchNumbersRotation;
+    final progress = (phase / (2 * pi)).clamp(0.0, 1.0);
+    final settle = progress > 0.82 ? (1 - progress) / 0.18 : 1.0;
+    final pulse = settle;
+    final branchIndex = ((now.hour + 1) % 24) ~/ 2;
+    final selectedStartAngle =
+        _degToRad(branchIndex * 30 + 165) - pi / 2 - phase;
+
+    canvas.drawCircle(
+      center,
+      bandRadius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = bandWidth
+        ..color = const Color(0xFFFFC857).withValues(alpha: 0.16 * pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+    );
+
+    final trailPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    trailPaint
+      ..strokeWidth = bandWidth - 10
+      ..color = const Color(0xFFFFD56A).withValues(alpha: 0.24 * pulse);
+    canvas.drawArc(
+      bandRect,
+      selectedStartAngle - pi / 1.55,
+      pi / 1.55,
+      false,
+      trailPaint,
+    );
+
+    final selectedPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = bandWidth - 8
+      ..color = const Color(0xFFFFE09A).withValues(alpha: 0.36 * pulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawArc(
+      bandRect,
+      selectedStartAngle,
+      pi / 6 * (0.55 + 0.45 * settle),
+      false,
+      selectedPaint,
+    );
+
+    final crownPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = bandWidth - 18
+      ..color = const Color(0xFFFFF4B8).withValues(alpha: 0.98 * pulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+    canvas.drawArc(bandRect, selectedStartAngle, pi / 6, false, crownPaint);
+
+    for (var index = 0; index < 14; index += 1) {
+      final trailProgress = index / 13;
+      final angle = selectedStartAngle - trailProgress * pi / 1.7;
+      final shimmer = 1 - trailProgress * 0.7;
+      final particleRadius =
+          branchRadius + (index % 3) * (generalRadius - branchRadius) / 2;
+      final particleCenter = Offset(
+        center.dx + cos(angle) * particleRadius,
+        center.dy + sin(angle) * particleRadius,
+      );
+      canvas.drawCircle(
+        particleCenter,
+        1 + shimmer * 3.2,
+        Paint()
+          ..color = const Color(
+            0xFFFFE6A7,
+          ).withValues(alpha: (0.12 + shimmer * 0.8) * settle)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+      );
+    }
+  }
+
+  void _drawBranchAndGeneralSpotlight(
+    Canvas canvas,
+    Offset center,
+    double outerRadius,
+  ) {
+    final branchRadius = ClockDialRing.branches.radiusFor(outerRadius);
+    final generalRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
+    final innerEdge = branchRadius - 18;
+    final outerEdge = generalRadius + 12;
+    final bandRadius = (innerEdge + outerEdge) / 2;
+    final bandWidth = outerEdge - innerEdge;
+    const pulse = 1.0;
+
+    canvas.saveLayer(null, Paint());
+    canvas.drawCircle(
+      center,
+      outerRadius + 14,
+      Paint()..color = Colors.white.withValues(alpha: 0.38),
+    );
+    canvas.drawCircle(
+      center,
+      bandRadius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = bandWidth + 4
+        ..blendMode = BlendMode.clear,
+    );
+    canvas.restore();
+
+    final glowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = bandWidth + 12
+      ..color = const Color(0xFFFFD56A).withValues(alpha: 0.68 * pulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
+    canvas.drawCircle(center, bandRadius, glowPaint);
   }
 
   void _drawWeeks(Canvas canvas, Offset center, double radius) {
@@ -242,9 +478,9 @@ class ClockPainter extends CustomPainter {
         canvas.drawLine(boundaryStart, boundaryEnd, monthBoundaryPaint);
       }
 
-      final double tickOuter = radius;
+      final double tickOuter = isCurrentDay ? radius + 1.0 : radius;
       final double tickInner =
-          radius - (isCurrentDay ? 9.0 : (isMidIntervalDay ? 7.0 : 4.5));
+          radius - (isCurrentDay ? 10.0 : (isMidIntervalDay ? 7.0 : 4.5));
       final Offset start = _pointOnCircle(center, tickInner, angle);
       final Offset end = _pointOnCircle(center, tickOuter, angle);
 
@@ -258,7 +494,7 @@ class ClockPainter extends CustomPainter {
 
       if (showLabel) {
         textPainter.text = TextSpan(
-          text: isCurrentDay ? '$dayNumber天' : '$dayNumber',
+          text: isCurrentDay ? '本年第$dayNumber天' : '$dayNumber',
           style: TextStyle(
             color: isCurrentDay ? Colors.blue[800] : Colors.black54,
             fontSize: isCurrentDay ? 9 : 7,
@@ -267,7 +503,7 @@ class ClockPainter extends CustomPainter {
         );
         textPainter.layout();
 
-        final labelPosition = _pointOnCircle(center, radius - 12, angle);
+        final labelPosition = _pointOnCircle(center, radius - 16, angle);
         canvas.save();
         canvas.translate(labelPosition.dx, labelPosition.dy);
         canvas.rotate(angle);
@@ -413,7 +649,7 @@ class ClockPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 24
       ..color = const Color(0xFFD5DBDB).withOpacity(0.45);
-    canvas.drawCircle(center, radius * 0.78, emptyBranchRing);
+    canvas.drawCircle(center, radius * 0.68 + 30, emptyBranchRing);
 
     // 高亮当前地支 (内层经络也一起高亮?)
     // 计算当前地支索引 (23:00-01:00 为子(0), 01:00-03:00 为丑(1)...)
@@ -432,6 +668,10 @@ class ClockPainter extends CustomPainter {
       ..strokeCap = StrokeCap.butt
       ..color = const Color(0xFFF1C40F).withOpacity(0.5); // 金黄色高亮
 
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-branchNumbersRotation);
+    canvas.translate(-center.dx, -center.dy);
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius * 0.68),
       startAngleRad,
@@ -439,6 +679,7 @@ class ClockPainter extends CustomPainter {
       false,
       highlightPaint,
     );
+    canvas.restore();
 
     // 高亮当前经络 (经络圈半径0.56，宽度30)
     final Paint highlightMeridianPaint = Paint()
@@ -466,7 +707,6 @@ class ClockPainter extends CustomPainter {
     // canvas.drawCircle(center, radius * 0.70, inline2);
 
     // canvas.drawCircle(center, radius * 0.70, inline2);
-    canvas.drawCircle(center, 6, Paint()..color = const Color(0xFFE74C3C));
   }
 
   void _drawTicks(Canvas canvas, Offset center, double radius) {
@@ -494,14 +734,27 @@ class ClockPainter extends CustomPainter {
     }
 
     // 地支刻度
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-branchNumbersRotation);
+    canvas.translate(-center.dx, -center.dy);
     for (int i = 0; i < 12; i += 1) {
       final angle = _degToRad(i * 30 + 180 + 15);
       final start = _pointOnCircle(center, radius * 0.68 + 18, angle);
       final end = _pointOnCircle(center, radius * 0.68 - 18, angle);
       canvas.drawLine(start, end, branchPaint);
+    }
+    canvas.restore();
 
-      final emptyRingStart = _pointOnCircle(center, radius * 0.78 + 12, angle);
-      final emptyRingEnd = _pointOnCircle(center, radius * 0.78 - 12, angle);
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-branchNumbersRotation);
+    canvas.translate(-center.dx, -center.dy);
+    final generalRadius = radius * 0.68 + 30;
+    for (int i = 0; i < 12; i += 1) {
+      final angle = _degToRad(i * 30 + 180 + 15);
+      final emptyRingStart = _pointOnCircle(center, generalRadius + 12, angle);
+      final emptyRingEnd = _pointOnCircle(center, generalRadius - 12, angle);
       canvas.drawLine(emptyRingStart, emptyRingEnd, branchPaint);
     }
 
@@ -510,26 +763,134 @@ class ClockPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
     for (int i = 0; i < 12; i += 1) {
-      final angle = _degToRad(i * 30 + 180 + 30);
-      final position = _pointOnCircle(center, radius * 0.78, angle);
-      emptyRingTextPainter.text = TextSpan(
-        text: '${i + 1}',
-        style: const TextStyle(
-          color: Color(0xFF5D6D7E),
-          fontSize: 10,
-          fontWeight: FontWeight.normal,
-        ),
-      );
-      emptyRingTextPainter.layout();
-      emptyRingTextPainter.paint(
-        canvas,
-        position -
-            Offset(
-              emptyRingTextPainter.width / 2,
-              emptyRingTextPainter.height / 2,
-            ),
-      );
+      final cellCenterAngle = _degToRad(i * 30 + 180 + 30);
+      final generalName = '${yakshaGeneralsByDialPosition[i]}大将';
+      for (
+        int characterIndex = 0;
+        characterIndex < generalName.length;
+        characterIndex += 1
+      ) {
+        final characterAngle =
+            cellCenterAngle +
+            (characterIndex - (generalName.length - 1) / 2) * pi / 36;
+        final position = _pointOnCircle(center, generalRadius, characterAngle);
+        emptyRingTextPainter.text = TextSpan(
+          text: generalName[characterIndex],
+          style: const TextStyle(
+            color: Color(0xFF5D6D7E),
+            fontSize: 11,
+            fontWeight: FontWeight.normal,
+          ),
+        );
+        emptyRingTextPainter.layout();
+        canvas.save();
+        canvas.translate(position.dx, position.dy);
+        canvas.rotate(characterAngle);
+        emptyRingTextPainter.paint(
+          canvas,
+          Offset(
+            -emptyRingTextPainter.width / 2,
+            -emptyRingTextPainter.height / 2,
+          ),
+        );
+        canvas.restore();
+      }
     }
+    canvas.restore();
+  }
+
+  void _drawFeaturedEarthBranches(
+    Canvas canvas,
+    Offset center,
+    double branchRadius,
+  ) {
+    final textPainter = TextPainter(
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-branchNumbersRotation);
+    canvas.translate(-center.dx, -center.dy);
+    for (int i = 0; i < 24; i += 2) {
+      final branchIndex = i ~/ 2;
+      final angle = _degToRad(i * 15 + 180);
+      final position = _pointOnCircle(center, branchRadius, angle);
+      textPainter.text = TextSpan(
+        style: const TextStyle(
+          color: Color(0xFF6C3483),
+          fontWeight: FontWeight.w800,
+          fontSize: 12,
+          fontFamily: 'Microsoft YaHei',
+          shadows: [Shadow(color: Colors.white, blurRadius: 3)],
+        ),
+        children: [
+          TextSpan(text: earthBranches[branchIndex]),
+          const TextSpan(text: '时', style: TextStyle(fontSize: 12)),
+        ],
+      );
+      textPainter.layout();
+      canvas.save();
+      canvas.translate(position.dx, position.dy);
+      canvas.rotate(branchNumbersRotation);
+      textPainter.paint(
+        canvas,
+        Offset(-textPainter.width / 2, -textPainter.height / 2),
+      );
+      canvas.restore();
+    }
+    canvas.restore();
+  }
+
+  void _drawFeaturedYakshaGenerals(
+    Canvas canvas,
+    Offset center,
+    double hourRadius,
+  ) {
+    final generalRadius = hourRadius * 0.68 + 30;
+    final textPainter = TextPainter(
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-branchNumbersRotation);
+    canvas.translate(-center.dx, -center.dy);
+    for (int i = 0; i < 12; i += 1) {
+      final cellCenterAngle = _degToRad(i * 30 + 180 + 30);
+      final generalName = '${yakshaGeneralsByDialPosition[i]}大将';
+      for (
+        int characterIndex = 0;
+        characterIndex < generalName.length;
+        characterIndex += 1
+      ) {
+        final characterAngle =
+            cellCenterAngle +
+            (characterIndex - (generalName.length - 1) / 2) * pi / 36;
+        final position = _pointOnCircle(center, generalRadius, characterAngle);
+        textPainter.text = TextSpan(
+          text: generalName[characterIndex],
+          style: const TextStyle(
+            color: Color(0xFF4A235A),
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            shadows: [Shadow(color: Colors.white, blurRadius: 3)],
+          ),
+        );
+        textPainter.layout();
+        canvas.save();
+        canvas.translate(position.dx, position.dy);
+        canvas.rotate(characterAngle);
+        textPainter.paint(
+          canvas,
+          Offset(-textPainter.width / 2, -textPainter.height / 2),
+        );
+        canvas.restore();
+      }
+    }
+    canvas.restore();
   }
 
   void _drawEarthBranches(Canvas canvas, Offset center, double radius) {
@@ -538,6 +899,10 @@ class ClockPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-branchNumbersRotation);
+    canvas.translate(-center.dx, -center.dy);
     for (int i = 0; i < 24; i += 2) {
       final branchIndex = i ~/ 2;
       final angle = _degToRad(i * 15 + 180);
@@ -560,10 +925,16 @@ class ClockPainter extends CustomPainter {
       );
 
       textPainter.layout();
-      final offset =
-          position - Offset(textPainter.width / 2, textPainter.height / 2);
-      textPainter.paint(canvas, offset);
+      canvas.save();
+      canvas.translate(position.dx, position.dy);
+      canvas.rotate(branchNumbersRotation);
+      textPainter.paint(
+        canvas,
+        Offset(-textPainter.width / 2, -textPainter.height / 2),
+      );
+      canvas.restore();
     }
+    canvas.restore();
   }
 
   void _drawMeridians(Canvas canvas, Offset center, double radius) {
@@ -850,5 +1221,8 @@ class ClockPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ClockPainter oldDelegate) =>
-      oldDelegate.now.second != now.second;
+      oldDelegate.now.second != now.second ||
+      oldDelegate.hoveredRing != hoveredRing ||
+      oldDelegate.isBranchNumbersRotating != isBranchNumbersRotating ||
+      oldDelegate.branchNumbersRotation != branchNumbersRotation;
 }
