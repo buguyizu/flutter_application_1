@@ -2,12 +2,20 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import 'clock_painter.dart';
+
 class BranchPlaceholderPainter extends CustomPainter {
-  BranchPlaceholderPainter(this.title, this.currentIndex, {this.subtitle});
+  BranchPlaceholderPainter(
+    this.title,
+    this.currentIndex, {
+    this.subtitle,
+    this.language = DisplayLanguage.chinese,
+  });
 
   final String title;
   final int currentIndex;
   final String? subtitle;
+  final DisplayLanguage language;
   static const List<String> branches = <String>[
     '子',
     '丑',
@@ -22,6 +30,23 @@ class BranchPlaceholderPainter extends CustomPainter {
     '戌',
     '亥',
   ];
+
+  String _branchLabel(int index) => language == DisplayLanguage.english
+      ? const [
+          'Zi',
+          'Chou',
+          'Yin',
+          'Mao',
+          'Chen',
+          'Si',
+          'Wu',
+          'Wei',
+          'Shen',
+          'You',
+          'Xu',
+          'Hai',
+        ][index]
+      : branches[index];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -93,10 +118,10 @@ class BranchPlaceholderPainter extends CustomPainter {
         center.dy + sin(angle) * ringRadius,
       );
       textPainter.text = TextSpan(
-        text: branches[i],
-        style: TextStyle(
-          color: const Color(0xFF8E44AD),
-          fontSize: 16,
+        text: _branchLabel(i),
+        style: const TextStyle(
+          color: Color(0xFF8E44AD),
+          fontSize: 13,
           fontWeight: FontWeight.normal,
           fontFamily: 'Microsoft YaHei',
         ),
@@ -164,7 +189,8 @@ class BranchPlaceholderPainter extends CustomPainter {
   bool shouldRepaint(covariant BranchPlaceholderPainter oldDelegate) {
     return oldDelegate.currentIndex != currentIndex ||
         oldDelegate.title != title ||
-        oldDelegate.subtitle != subtitle;
+        oldDelegate.subtitle != subtitle ||
+        oldDelegate.language != language;
   }
 }
 
@@ -285,7 +311,7 @@ class ThirtySegmentDialPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: labels.isEmpty ? '${index + 1}' : labels[index],
         style: TextStyle(
-          color: Color(0xFF5D6D7E),
+          color: const Color(0xFF5D6D7E),
           fontSize: labels.isEmpty ? 11 : 8,
           fontWeight:
               labels.isNotEmpty &&
@@ -379,10 +405,19 @@ class ThirtySegmentDialPainter extends CustomPainter {
 }
 
 class TwelveSegmentDialPainter extends CustomPainter {
-  TwelveSegmentDialPainter(this.currentIndex, this.startYear);
+  TwelveSegmentDialPainter(
+    this.currentIndex,
+    this.startYear, {
+    this.language = DisplayLanguage.chinese,
+    this.title = '星乙192运',
+    this.subtitle = '辰戌2303世',
+  });
 
   final int currentIndex;
   final int startYear;
+  final DisplayLanguage language;
+  final String title;
+  final String subtitle;
   static const branches = <String>[
     '子',
     '丑',
@@ -405,18 +440,18 @@ class TwelveSegmentDialPainter extends CustomPainter {
     final step = 2 * pi / 12;
     final startAngle = pi / 2 - step / 2;
     const branches = <String>[
-      '辰子',
-      '辰丑',
-      '辰寅',
-      '辰卯',
-      '辰辰',
-      '辰巳',
-      '辰午',
-      '辰未',
-      '辰申',
-      '辰酉',
-      '辰戌',
-      '辰亥',
+      '子',
+      '丑',
+      '寅',
+      '卯',
+      '辰',
+      '巳',
+      '午',
+      '未',
+      '申',
+      '酉',
+      '戌',
+      '亥',
     ];
     final ringWidth = radius * 0.34;
     final ringRadius = radius - ringWidth / 2;
@@ -481,7 +516,22 @@ class TwelveSegmentDialPainter extends CustomPainter {
         center.dy + sin(angle) * ringRadius,
       );
       textPainter.text = TextSpan(
-        text: branches[index],
+        text: language == DisplayLanguage.english
+            ? const [
+                'Zi',
+                'Chou',
+                'Yin',
+                'Mao',
+                'Chen',
+                'Si',
+                'Wu',
+                'Wei',
+                'Shen',
+                'You',
+                'Xu',
+                'Hai',
+              ][index]
+            : branches[index],
         style: const TextStyle(
           color: Color(0xFF8E44AD),
           fontSize: 13,
@@ -506,9 +556,9 @@ class TwelveSegmentDialPainter extends CustomPainter {
     );
 
     final titlePainter = TextPainter(
-      text: const TextSpan(
-        text: '星乙192运',
-        style: TextStyle(
+      text: TextSpan(
+        text: title,
+        style: const TextStyle(
           color: Color(0xFF37474F),
           fontSize: 19,
           fontWeight: FontWeight.normal,
@@ -520,7 +570,7 @@ class TwelveSegmentDialPainter extends CustomPainter {
     )..layout();
     final subtitlePainter = TextPainter(
       text: TextSpan(
-        text: '辰戌2303世',
+        text: subtitle,
         style: const TextStyle(
           color: Color(0xFF37474F),
           fontSize: 13,
@@ -548,6 +598,9 @@ class TwelveSegmentDialPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant TwelveSegmentDialPainter oldDelegate) {
     return oldDelegate.currentIndex != currentIndex ||
-        oldDelegate.startYear != startYear;
+        oldDelegate.startYear != startYear ||
+        oldDelegate.language != language ||
+        oldDelegate.title != title ||
+        oldDelegate.subtitle != subtitle;
   }
 }

@@ -7,7 +7,18 @@ import 'clock_painter.dart';
 import 'dial_painters.dart';
 
 class ClockPage extends StatefulWidget {
-  const ClockPage({super.key});
+  const ClockPage({
+    super.key,
+    required this.language,
+    required this.onLanguageChanged,
+    required this.themeOption,
+    required this.onThemeOptionChanged,
+  });
+
+  final DisplayLanguage language;
+  final ValueChanged<DisplayLanguage> onLanguageChanged;
+  final AppThemeOption themeOption;
+  final ValueChanged<AppThemeOption> onThemeOptionChanged;
 
   @override
   State<ClockPage> createState() => _ClockPageState();
@@ -15,9 +26,13 @@ class ClockPage extends StatefulWidget {
 
 class _ClockPageState extends State<ClockPage>
     with SingleTickerProviderStateMixin {
-  // 皇极经世历史纪年锚点：1024年固定为“丑”，每30年顺移一世支。
-  static const int _historicalEraStartYear = 1024;
-  static const int _historicalEraStartBranchNumber = 2;
+  // 皇极经世纪年锚点：日甲一元、月子一会、星甲一运、辰子一世。
+  static const int _historicalEraStartYear = -67046;
+  // 连续六十甲子基准：天文纪年4年为甲子年。
+  static const int _sexagenaryCycleBaseYear = 4;
+  static const int _yearsPerShi = 30;
+  static const int _yearsPerYun = 12 * _yearsPerShi;
+  static const int _yearsPerHui = 30 * _yearsPerYun;
 
   late DateTime _now;
   Timer? _timer;
@@ -25,6 +40,8 @@ class _ClockPageState extends State<ClockPage>
   ClockDialRing? _hoveredClockRing;
   Offset? _clockTooltipPosition;
   double _clockScale = 1.3;
+  late DisplayLanguage _language;
+  final Set<ClockDialRing> _visibleClockRings = Set.of(ClockDialRing.values);
   late final AnimationController _branchNumberRotationController;
   late final ScrollController _horizontalScrollController;
 
@@ -36,6 +53,7 @@ class _ClockPageState extends State<ClockPage>
   @override
   void initState() {
     super.initState();
+    _language = widget.language;
     _now = _chinaNow();
     _horizontalScrollController = ScrollController();
     _branchNumberRotationController = AnimationController(
@@ -60,7 +78,7 @@ class _ClockPageState extends State<ClockPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Scrollbar(
           controller: _horizontalScrollController,
@@ -73,7 +91,10 @@ class _ClockPageState extends State<ClockPage>
               margin: const EdgeInsets.all(8),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.black26, width: 1.2),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  width: 1.2,
+                ),
               ),
               child: Scrollbar(
                 child: SingleChildScrollView(
@@ -81,25 +102,24 @@ class _ClockPageState extends State<ClockPage>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildPlaceholderBranchDial(
-                              '会',
-                              _huangjiHuiIndex(_now),
-                            ),
-                            const SizedBox(height: 24),
-                            _buildThirtySegmentDial(_huangjiYunIndex(_now)),
-                            const SizedBox(height: 24),
-                            _buildTwelveSegmentDial(
-                              _huangjiShiIndex(_now),
-                              _now.year,
-                            ),
-                            const SizedBox(height: 24),
-                            _buildYearDial(_now),
-                          ],
+                        SizedBox(
+                          width: 206,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildPlaceholderBranchDial(_now),
+                              const SizedBox(height: 24),
+                              _buildThirtySegmentDial(_now),
+                              const SizedBox(height: 24),
+                              _buildTwelveSegmentDial(
+                                _huangjiShiIndex(_now),
+                                _now.year,
+                              ),
+                              const SizedBox(height: 24),
+                              _buildYearDial(_now),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 32),
                         SizedBox(
                           width: 60 + 540 * _clockScale,
                           child: Padding(
@@ -175,63 +195,217 @@ class _ClockPageState extends State<ClockPage>
                                 Positioned(
                                   left: 0,
                                   bottom: 0,
-                                  child: _buildClockScaleControls(),
+                                  child: _buildClockScaleControls(context),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(width: 32),
                         SizedBox(
-                          width: 176,
+                          width: 206,
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text(
-                                    '时间旋流',
-                                    style: TextStyle(
-                                      color: Color(0xFF283593),
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          _localized(
+                                            '时间旋流',
+                                            'Time Flow',
+                                            '時間の流転',
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          PopupMenuButton<DisplayLanguage>(
+                                            padding: const EdgeInsets.all(6),
+                                            iconSize: 22,
+                                            constraints: const BoxConstraints(
+                                              minWidth: 176,
+                                            ),
+                                            tooltip: _localized(
+                                              '切换语言',
+                                              'Change language',
+                                              '言語を切り替え',
+                                            ),
+                                            icon: const Icon(Icons.language),
+                                            onSelected: (language) {
+                                              setState(
+                                                () => _language = language,
+                                              );
+                                              widget.onLanguageChanged(
+                                                language,
+                                              );
+                                            },
+                                            itemBuilder: (context) => [
+                                              CheckedPopupMenuItem(
+                                                value: DisplayLanguage.chinese,
+                                                checked:
+                                                    _language ==
+                                                    DisplayLanguage.chinese,
+                                                child: const Text('简体中文'),
+                                              ),
+                                              CheckedPopupMenuItem(
+                                                value: DisplayLanguage
+                                                    .traditionalChinese,
+                                                checked:
+                                                    _language ==
+                                                    DisplayLanguage
+                                                        .traditionalChinese,
+                                                child: const Text('繁體中文'),
+                                              ),
+                                              CheckedPopupMenuItem(
+                                                value: DisplayLanguage.english,
+                                                checked:
+                                                    _language ==
+                                                    DisplayLanguage.english,
+                                                child: const Text('English'),
+                                              ),
+                                              CheckedPopupMenuItem(
+                                                value: DisplayLanguage.japanese,
+                                                checked:
+                                                    _language ==
+                                                    DisplayLanguage.japanese,
+                                                child: const Text('日本語'),
+                                              ),
+                                            ],
+                                          ),
+                                          PopupMenuButton<AppThemeOption>(
+                                            padding: const EdgeInsets.all(6),
+                                            iconSize: 22,
+                                            tooltip: _localized(
+                                              '选择主题',
+                                              'Choose theme',
+                                              'テーマを選択',
+                                              traditionalChinese: '選擇主題',
+                                            ),
+                                            icon: const Icon(
+                                              Icons.palette_outlined,
+                                            ),
+                                            onSelected:
+                                                widget.onThemeOptionChanged,
+                                            itemBuilder: (context) => AppThemeOption
+                                                .values
+                                                .map(
+                                                  (themeOption) =>
+                                                      CheckedPopupMenuItem<
+                                                        AppThemeOption
+                                                      >(
+                                                        value: themeOption,
+                                                        checked:
+                                                            widget
+                                                                .themeOption ==
+                                                            themeOption,
+                                                        child: Row(
+                                                          children: [
+                                                            Container(
+                                                              width: 12,
+                                                              height: 12,
+                                                              decoration: BoxDecoration(
+                                                                color: themeOption
+                                                                    .preset
+                                                                    .seedColor,
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 8,
+                                                            ),
+                                                            Text(
+                                                              _themeOptionLabel(
+                                                                themeOption,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                )
+                                                .toList(),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                  SizedBox(height: 20),
+                                  const SizedBox(height: 20),
                                   Text(
-                                    '元会运世',
+                                    _localized(
+                                      '元会运世',
+                                      'Yuan Hui Yun Shi',
+                                      '元会運世',
+                                    ),
                                     style: TextStyle(
-                                      color: Color(0xFF37474F),
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  SizedBox(height: 8),
+                                  const SizedBox(height: 8),
                                   Text(
-                                    '以《皇极经世》中的方式记录时间旋流：\n一元含十二会，\n一会含三十运，\n一运含十二世，\n一世为三十年。\n一元总为129600天。',
+                                    _localized(
+                                      '以《皇极经世》中的方式记录时间旋流，一元为129600年。\n一元含十二会，\n一会含三十运，\n一运含十二世，\n一世为三十年。\n当前日甲一元范围：\n公元前67046年~公元62553年',
+                                      'Time flows according to the Huangji Jingshi cycle. One yuan is 129,600 years.\nOne yuan contains twelve hui,\none hui contains thirty yun,\none yun contains twelve shi,\none shi contains thirty years.\nCurrent Yuan 1:\n67046 BCE - 62553 CE',
+                                      '『皇極経世』に基づき時間の流転を記録します。一元は129,600年です。\n一元は十二会、\n一会は三十運、\n一運は十二世、\n一世は三十年です。\n現在の日甲一元の範囲：\n紀元前67046年〜西暦62553年',
+                                    ),
                                     style: TextStyle(
-                                      color: Color(0xFF546E7A),
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                       fontSize: 13,
                                       height: 1.6,
                                     ),
                                   ),
-                                  SizedBox(height: 24),
-                                  Divider(color: Colors.black12),
-                                  SizedBox(height: 20),
+                                  const SizedBox(height: 24),
+                                  Divider(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outlineVariant,
+                                  ),
+                                  const SizedBox(height: 20),
                                   Text(
-                                    '大将守护',
+                                    _localized(
+                                      '大将守护',
+                                      'General Protection',
+                                      '大将の守護',
+                                    ),
                                     style: TextStyle(
-                                      color: Color(0xFF37474F),
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  SizedBox(height: 8),
+                                  const SizedBox(height: 8),
                                   Text(
-                                    '十二药叉大将源自于唐三藏法师玄奘所译《药师琉璃光如来本愿功德经》，发愿卫护饶益流布此经及受持此如来名号之一切有情。在旋流守护时，请持续恭敬念诵：\n南无药师琉璃光如来！\n\n也可以依次恭敬念诵十二药叉大将的名号：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
+                                    _localized(
+                                      '十二药叉大将源自于唐三藏法师玄奘所译《药师琉璃光如来本愿功德经》，发愿卫护饶益流布此经及受持此如来名号之一切有情众生。在旋流守护时，请持续恭敬念诵：\n南无药师琉璃光如来！\n\n也可以依次恭敬念诵十二药叉大将的名号：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
+                                      'The Twelve Yaksha Generals are described in the Bhaiṣajyaguru Vaidūryaprabharāja Sūtra translated by Xuanzang. During the rotation, respectfully recite:\nNamo Bhaiṣajyaguru Vaidūryaprabharāja Tathāgata!\n\nThe Twelve Yaksha Generals:\nKumbhira\nVajra\nMihira\nAndira\nAnila\nSandila\nIndra\nPajra\nMahoraga\nCandala\nCatura\nVikala',
+                                      '十二薬叉大将は、玄奘訳『薬師瑠璃光如来本願功徳経』に説かれます。旋流守護の間、敬意をもって念誦してください。\n南無薬師瑠璃光如来！\n\n十二薬叉大将：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
+                                    ),
                                     style: TextStyle(
-                                      color: Color(0xFF546E7A),
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                       fontSize: 13,
                                       height: 1.6,
                                     ),
@@ -242,7 +416,11 @@ class _ClockPageState extends State<ClockPage>
                                 left: 0,
                                 bottom: 0,
                                 child: Tooltip(
-                                  message: '启动一轮旋流守护',
+                                  message: _localized(
+                                    '启动一轮旋流守护',
+                                    'Start one protection cycle',
+                                    '旋流守護を開始',
+                                  ),
                                   child: ElevatedButton.icon(
                                     onPressed:
                                         _branchNumberRotationController
@@ -259,7 +437,13 @@ class _ClockPageState extends State<ClockPage>
                                       ),
                                       child: Icon(Icons.autorenew),
                                     ),
-                                    label: const Text('旋流守护'),
+                                    label: Text(
+                                      _localized(
+                                        '旋流守护',
+                                        'Start rotation',
+                                        '旋流守護',
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -287,6 +471,9 @@ class _ClockPageState extends State<ClockPage>
           painter: ClockPainter(
             _now,
             hoveredRing: _hoveredClockRing,
+            visibleRings: Set<ClockDialRing>.unmodifiable(_visibleClockRings),
+            language: _language,
+            colorScheme: Theme.of(context).colorScheme,
             isBranchNumbersRotating:
                 _branchNumberRotationController.isAnimating,
             branchNumbersRotation:
@@ -337,17 +524,22 @@ class _ClockPageState extends State<ClockPage>
     );
   }
 
-  Widget _buildClockScaleControls() {
+  Widget _buildClockScaleControls(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.9),
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainer.withValues(alpha: 0.9),
       elevation: 3,
       borderRadius: BorderRadius.circular(6),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Tooltip(
-            message: '放大大盘',
+            message: _localized('放大大盘', 'Zoom in', '大盤を拡大'),
             child: IconButton(
+              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+              padding: const EdgeInsets.all(6),
+              iconSize: 20,
               icon: const Icon(Icons.add),
               onPressed: _clockScale >= 1.8
                   ? null
@@ -356,12 +548,42 @@ class _ClockPageState extends State<ClockPage>
           ),
           const Divider(height: 1),
           Tooltip(
-            message: '缩小大盘',
+            message: _localized('缩小大盘', 'Zoom out', '大盤を縮小'),
             child: IconButton(
+              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+              padding: const EdgeInsets.all(6),
+              iconSize: 20,
               icon: const Icon(Icons.remove),
               onPressed: _clockScale <= 0.7
                   ? null
                   : () => _changeClockScale(-0.1),
+            ),
+          ),
+          const Divider(height: 1),
+          PopupMenuButton<ClockDialRing>(
+            padding: const EdgeInsets.all(6),
+            iconSize: 20,
+            tooltip: _localized('显示或隐藏圈层', 'Show or hide layers', '環を表示または非表示'),
+            icon: const Icon(Icons.layers_outlined),
+            onSelected: _toggleClockRing,
+            itemBuilder: (context) => ClockDialRing.values
+                .map(
+                  (ring) => CheckedPopupMenuItem<ClockDialRing>(
+                    value: ring,
+                    checked: _visibleClockRings.contains(ring),
+                    child: Text(_clockLayerLabel(ring)),
+                  ),
+                )
+                .toList(),
+          ),
+          Tooltip(
+            message: _localized('显示全部圈层', 'Show all layers', 'すべての環を表示'),
+            child: IconButton(
+              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+              padding: const EdgeInsets.all(6),
+              iconSize: 20,
+              icon: const Icon(Icons.visibility),
+              onPressed: _restoreAllClockRings,
             ),
           ),
         ],
@@ -375,7 +597,167 @@ class _ClockPageState extends State<ClockPage>
     });
   }
 
-  Widget _buildPlaceholderBranchDial(String label, int currentIndex) {
+  void _toggleClockRing(ClockDialRing ring) {
+    setState(() {
+      if (_visibleClockRings.contains(ring)) {
+        _visibleClockRings.remove(ring);
+        if (_hoveredClockRing == ring) {
+          _hoveredClockRing = null;
+          _clockTooltipPosition = null;
+        }
+      } else {
+        _visibleClockRings.add(ring);
+      }
+    });
+  }
+
+  void _restoreAllClockRings() {
+    setState(() => _visibleClockRings.addAll(ClockDialRing.values));
+  }
+
+  String _localized(
+    String chinese,
+    String english,
+    String japanese, {
+    String? traditionalChinese,
+  }) {
+    final text = switch (_language) {
+      DisplayLanguage.chinese => chinese,
+      DisplayLanguage.traditionalChinese => traditionalChinese ?? chinese,
+      DisplayLanguage.english => english,
+      DisplayLanguage.japanese => japanese,
+    };
+    return _language == DisplayLanguage.traditionalChinese
+        ? _toTraditionalChinese(text)
+        : text;
+  }
+
+  String _themePresetLabel(AppThemePreset themePreset) {
+    return switch (themePreset) {
+      AppThemePreset.chronicleIndigo => _localized(
+        '时序靛',
+        'Chronicle Indigo',
+        '時序藍',
+        traditionalChinese: '時序靛',
+      ),
+      AppThemePreset.jingshiJade => _localized(
+        '经世青',
+        'Jingshi Jade',
+        '経世緑',
+        traditionalChinese: '經世青',
+      ),
+      AppThemePreset.moonPhaseGold => _localized(
+        '月相金',
+        'Moon Phase Gold',
+        '月相金',
+      ),
+      AppThemePreset.cinnabarRed => _localized(
+        '朱砂红',
+        'Cinnabar Red',
+        '朱砂赤',
+        traditionalChinese: '朱砂紅',
+      ),
+      AppThemePreset.midnightInk => _localized(
+        '子夜墨',
+        'Midnight Ink',
+        '真夜中の墨',
+        traditionalChinese: '子夜墨',
+      ),
+      AppThemePreset.bambooShade => _localized(
+        '幽篁青',
+        'Bamboo Shade',
+        '幽篁の緑',
+        traditionalChinese: '幽篁青',
+      ),
+    };
+  }
+
+  String _themeOptionLabel(AppThemeOption themeOption) {
+    final brightnessLabel = themeOption.themeMode == ThemeMode.dark
+        ? _localized('深色', 'Dark', 'ダーク', traditionalChinese: '深色')
+        : _localized('亮色', 'Light', 'ライト', traditionalChinese: '亮色');
+    return '${_themePresetLabel(themeOption.preset)} $brightnessLabel';
+  }
+
+  String _toTraditionalChinese(String text) {
+    const replacements = <String, String>{
+      '时间': '時間',
+      '显示': '顯示',
+      '隐藏': '隱藏',
+      '主题': '主題',
+      '语言': '語言',
+      '切换': '切換',
+      '经络': '經絡',
+      '分钟': '分鐘',
+      '小时': '小時',
+      '年天数': '年天數',
+      '周数': '週數',
+      '地支时辰': '地支時辰',
+      '大将': '大將',
+      '皇极经世': '皇極經世',
+      '记录': '記錄',
+      '会': '會',
+      '运': '運',
+      '当前': '當前',
+      '范围': '範圍',
+      '药': '藥',
+      '愿': '願',
+      '发': '發',
+      '卫': '衛',
+      '护': '護',
+      '饶': '饒',
+      '经': '經',
+      '众': '眾',
+      '启动': '啟動',
+      '一轮': '一輪',
+      '缩': '縮',
+    };
+    for (final replacement in replacements.entries) {
+      text = text.replaceAll(replacement.key, replacement.value);
+    }
+    return text;
+  }
+
+  String _huiLabel(DateTime time) {
+    final number = _huangjiHuiNumber(time);
+    return _localized(
+      '月${_earthlyBranch(_huangjiHuiIndex(time))}$number会',
+      'Hui $number',
+      '月${_earthlyBranch(_huangjiHuiIndex(time))}$number会',
+    );
+  }
+
+  String _yunLabel(int year) {
+    final number = _huangjiYunNumberForYear(year);
+    return _localized(
+      '星${_heavenlyStem(number - 1)}$number运',
+      'Yun $number',
+      '星${_heavenlyStem(number - 1)}$number運',
+    );
+  }
+
+  String _shiLabel(int year) {
+    final time = DateTime(year);
+    final number = _huangjiShiNumber(time);
+    return _localized(
+      '辰${_earthlyBranch(_huangjiShiIndex(time))}$number世',
+      'Shi $number',
+      '辰${_earthlyBranch(_huangjiShiIndex(time))}$number世',
+    );
+  }
+
+  String _yearLabel(int year) {
+    final sexagenary = _sexagenaryYear(year);
+    return _localized(
+      '$year年（$sexagenary年）',
+      '$year ($sexagenary)',
+      '$year年（$sexagenary年）',
+    );
+  }
+
+  Widget _buildPlaceholderBranchDial(DateTime time) {
+    final huiIndex = _huangjiHuiIndex(time);
+    final huiLabel = _huiLabel(time);
     return SizedBox(
       width: 176,
       height: 210,
@@ -387,42 +769,47 @@ class _ClockPageState extends State<ClockPage>
             height: 176,
             child: CustomPaint(
               painter: BranchPlaceholderPainter(
-                label == '会' ? '日甲一元' : label,
-                currentIndex % 12,
-                subtitle: label == '会' ? '月午七会' : null,
+                _localized('日甲一元', 'Yuan 1', '日甲一元'),
+                huiIndex,
+                subtitle: huiLabel,
+                language: _language,
               ),
             ),
           ),
-          if (label == '会' || label == '世')
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Text.rich(
-                TextSpan(
-                  style: const TextStyle(
-                    color: Color(0xFF37474F),
-                    fontSize: 12,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Text.rich(
+              TextSpan(
+                style: TextStyle(color: Color(0xFF37474F), fontSize: 12),
+                children: [
+                  TextSpan(
+                    text: _localized('日甲一元', 'Yuan 1', '日甲一元'),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  children: label == '会'
-                      ? [
-                          const TextSpan(
-                            text: '日甲一元',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const TextSpan(text: '（12会-129600年）'),
-                        ]
-                      : [const TextSpan(text: '一世为30年')],
-                ),
-                textAlign: TextAlign.center,
+                  TextSpan(
+                    text: _localized(
+                      '（12会-129600年）',
+                      ' (12 Hui - 129,600 years)',
+                      '（12会・129,600年）',
+                    ),
+                  ),
+                ],
               ),
+              textAlign: TextAlign.center,
             ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildThirtySegmentDial(int currentIndex) {
+  Widget _buildThirtySegmentDial(DateTime time) {
+    final currentIndex = _huangjiYunIndex(time);
+    final huiLabel = _huiLabel(time);
+    final firstYunNumber = _huangjiYunNumber(time) - currentIndex;
+    final yunLabel = _yunLabel(time.year);
     return SizedBox(
       width: 176,
       height: 210,
@@ -435,15 +822,18 @@ class _ClockPageState extends State<ClockPage>
             child: CustomPaint(
               painter: ThirtySegmentDialPainter(
                 currentIndex,
-                title: '月午七会',
-                labels: List<String>.generate(30, (index) => '${index + 181}'),
+                title: huiLabel,
+                labels: List<String>.generate(
+                  30,
+                  (index) => '${firstYunNumber + index}',
+                ),
                 labelIndices: List<int>.generate(30, (index) => index),
                 startAtBottom: true,
-                currentLabel: '星乙192运',
+                currentLabel: yunLabel,
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             top: 0,
             left: 0,
             right: 0,
@@ -452,10 +842,16 @@ class _ClockPageState extends State<ClockPage>
                 style: TextStyle(color: Color(0xFF37474F), fontSize: 12),
                 children: [
                   TextSpan(
-                    text: '月午七会',
+                    text: huiLabel,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  TextSpan(text: '（30运-10800年）'),
+                  TextSpan(
+                    text: _localized(
+                      '（30运-10800年）',
+                      ' (30 Yun - 10,800 years)',
+                      '（30運・10,800年）',
+                    ),
+                  ),
                 ],
               ),
               textAlign: TextAlign.center,
@@ -478,7 +874,13 @@ class _ClockPageState extends State<ClockPage>
             width: 176,
             height: 176,
             child: CustomPaint(
-              painter: TwelveSegmentDialPainter(currentIndex, startYear),
+              painter: TwelveSegmentDialPainter(
+                currentIndex,
+                startYear,
+                language: _language,
+                title: _yunLabel(year),
+                subtitle: _shiLabel(year),
+              ),
             ),
           ),
           Positioned(
@@ -490,10 +892,16 @@ class _ClockPageState extends State<ClockPage>
                 style: const TextStyle(color: Color(0xFF37474F), fontSize: 12),
                 children: [
                   TextSpan(
-                    text: '星乙192运',
+                    text: _yunLabel(year),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const TextSpan(text: '（12世-360年）'),
+                  TextSpan(
+                    text: _localized(
+                      '（12世-360年）',
+                      ' (12 Shi - 360 years)',
+                      '（12世・360年）',
+                    ),
+                  ),
                 ],
               ),
               textAlign: TextAlign.center,
@@ -530,7 +938,7 @@ class _ClockPageState extends State<ClockPage>
               child: CustomPaint(
                 painter: ThirtySegmentDialPainter(
                   time.year - startYear,
-                  title: '辰戌2303世',
+                  title: _shiLabel(time.year),
                   labels: yearLabels,
                   labelIndices: List<int>.generate(30, (index) => index),
                   startAtBottom: true,
@@ -540,8 +948,8 @@ class _ClockPageState extends State<ClockPage>
                   hoveredIndex: _hoveredYearIndex,
                   hoverLabel: _hoveredYearIndex == null
                       ? null
-                      : '${startYear + _hoveredYearIndex!}年（${_sexagenaryYear(startYear + _hoveredYearIndex!)}年）',
-                  currentLabel: '${time.year}年（${_sexagenaryYear(time.year)}年）',
+                      : _yearLabel(startYear + _hoveredYearIndex!),
+                  currentLabel: _yearLabel(time.year),
                 ),
               ),
             ),
@@ -556,11 +964,11 @@ class _ClockPageState extends State<ClockPage>
                     fontSize: 12,
                   ),
                   children: [
-                    const TextSpan(
-                      text: '辰戌2303世',
+                    TextSpan(
+                      text: _shiLabel(time.year),
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    const TextSpan(text: '（30年）'),
+                    TextSpan(text: _localized('（30年）', ' (30 years)', '（30年）')),
                   ],
                 ),
                 textAlign: TextAlign.center,
@@ -588,12 +996,23 @@ class _ClockPageState extends State<ClockPage>
 
   ClockDialRing? _clockRingAt(Offset position, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final distance = (position - center).distance;
     final outerRadius = size.shortestSide / 2 - 10;
+    final hourRadius = outerRadius * 0.86;
+    final secondsCenter = center + Offset(0, -hourRadius * 0.22);
+    final secondsRadius = hourRadius * 0.15;
+    if (_visibleClockRings.contains(ClockDialRing.seconds) &&
+        (position - secondsCenter).distance <= secondsRadius) {
+      return ClockDialRing.seconds;
+    }
+
+    final distance = (position - center).distance;
     ClockDialRing? closestRing;
     var closestDistance = double.infinity;
 
     for (final ring in ClockDialRing.values) {
+      if (ring == ClockDialRing.seconds || !_visibleClockRings.contains(ring)) {
+        continue;
+      }
       final ringDistance = (distance - ring.radiusFor(outerRadius)).abs();
       if (ringDistance <= ring.hitTolerance && ringDistance < closestDistance) {
         closestRing = ring;
@@ -605,37 +1024,105 @@ class _ClockPageState extends State<ClockPage>
 
   String _clockRingTooltip(ClockDialRing ring) {
     return switch (ring) {
-      ClockDialRing.months => '月份圈',
-      ClockDialRing.weeks => '周数圈',
-      ClockDialRing.days => '年天数圈',
-      ClockDialRing.hours => '24小时圈',
-      ClockDialRing.branchNumbers => '大将守护圈，点击启动【旋流守护】。',
-      ClockDialRing.branches => '地支时辰圈',
-      ClockDialRing.meridians => '经络圈',
-      ClockDialRing.minutes => '分钟圈',
+      ClockDialRing.months => _localized('月份圈', 'Month ring', '月の環'),
+      ClockDialRing.weeks => _localized('周数圈', 'Week ring', '週の環'),
+      ClockDialRing.days => _localized('年天数圈', 'Day-of-year ring', '年日数の環'),
+      ClockDialRing.hours => _localized('24小时圈', '24-hour ring', '24時間の環'),
+      ClockDialRing.branchNumbers => _localized(
+        '大将守护圈，点击启动【旋流守护】。',
+        'General protection ring. Click to start rotation.',
+        '大将守護の環。クリックして旋流守護を開始します。',
+      ),
+      ClockDialRing.branches => _localized(
+        '地支时辰圈',
+        'Earthly branch ring',
+        '地支時辰の環',
+      ),
+      ClockDialRing.meridians => _localized('经络圈', 'Meridian ring', '経絡の環'),
+      ClockDialRing.minutes => _localized('分钟圈', 'Minute ring', '分の環'),
+      ClockDialRing.seconds => _localized('秒圈', 'Second ring', '秒の環'),
+    };
+  }
+
+  String _clockLayerLabel(ClockDialRing ring) {
+    return switch (ring) {
+      ClockDialRing.months => _localized('月份', 'Months', '月'),
+      ClockDialRing.weeks => _localized('周数', 'Weeks', '週'),
+      ClockDialRing.days => _localized('年天数', 'Day of year', '年日数'),
+      ClockDialRing.hours => _localized('24小时', '24 hours', '24時間'),
+      ClockDialRing.branchNumbers => _localized('大将', 'Generals', '大将'),
+      ClockDialRing.branches => _localized('地支时辰', 'Earthly branches', '地支時辰'),
+      ClockDialRing.meridians => _localized('经络', 'Meridians', '経絡'),
+      ClockDialRing.minutes => _localized('分钟', 'Minutes', '分'),
+      ClockDialRing.seconds => _localized('秒圈', 'Seconds', '秒'),
     };
   }
 
   int _huangjiHuiIndex(DateTime time) {
-    return 6;
+    return (_huangjiHuiNumber(time) - 1).remainder(12);
   }
 
   int _huangjiShiIndex(DateTime time) {
-    final eraIndex = (time.year - _historicalEraStartYear) ~/ 30;
-    // 地支按1开始编号：1=子，2=丑，……，11=戌，12=亥。
-    final branchNumber =
-        ((_historicalEraStartBranchNumber - 1 + eraIndex) % 12) + 1;
-    // 绘图数组从0开始，因此将1基序号转换为数组索引。
-    return branchNumber - 1;
+    return (_huangjiShiNumber(time) - 1).remainder(12);
   }
 
   int _yearCycleStart(int year) {
     return _historicalEraStartYear +
-        (year - _historicalEraStartYear) ~/ 30 * 30;
+        (year - _historicalEraStartYear) ~/ _yearsPerShi * _yearsPerShi;
   }
 
   int _huangjiYunIndex(DateTime time) {
-    return 192 - 181;
+    return (_huangjiYunNumber(time) - 1).remainder(30);
+  }
+
+  int _huangjiHuiNumber(DateTime time) {
+    return (time.year - _historicalEraStartYear) ~/ _yearsPerHui + 1;
+  }
+
+  int _huangjiYunNumber(DateTime time) {
+    return _huangjiYunNumberForYear(time.year);
+  }
+
+  int _huangjiYunNumberForYear(int year) {
+    return (year - _historicalEraStartYear) ~/ _yearsPerYun + 1;
+  }
+
+  int _huangjiShiNumber(DateTime time) {
+    return (time.year - _historicalEraStartYear) ~/ _yearsPerShi + 1;
+  }
+
+  String _heavenlyStem(int index) {
+    const heavenlyStems = <String>[
+      '甲',
+      '乙',
+      '丙',
+      '丁',
+      '戊',
+      '己',
+      '庚',
+      '辛',
+      '壬',
+      '癸',
+    ];
+    return heavenlyStems[index.remainder(heavenlyStems.length)];
+  }
+
+  String _earthlyBranch(int index) {
+    const earthlyBranches = <String>[
+      '子',
+      '丑',
+      '寅',
+      '卯',
+      '辰',
+      '巳',
+      '午',
+      '未',
+      '申',
+      '酉',
+      '戌',
+      '亥',
+    ];
+    return earthlyBranches[index.remainder(earthlyBranches.length)];
   }
 
   String _sexagenaryYear(int year) {
@@ -665,7 +1152,36 @@ class _ClockPageState extends State<ClockPage>
       '戌',
       '亥',
     ];
-    final cycleIndex = (year - 1984) % 60;
+    const romanizedHeavenlyStems = <String>[
+      'Jia',
+      'Yi',
+      'Bing',
+      'Ding',
+      'Wu',
+      'Ji',
+      'Geng',
+      'Xin',
+      'Ren',
+      'Gui',
+    ];
+    const romanizedEarthlyBranches = <String>[
+      'zi',
+      'chou',
+      'yin',
+      'mao',
+      'chen',
+      'si',
+      'wu',
+      'wei',
+      'shen',
+      'you',
+      'xu',
+      'hai',
+    ];
+    final cycleIndex = ((year - _sexagenaryCycleBaseYear) % 60 + 60) % 60;
+    if (_language == DisplayLanguage.english) {
+      return '${romanizedHeavenlyStems[cycleIndex % 10]}${romanizedEarthlyBranches[cycleIndex % 12]}';
+    }
     return '${heavenlyStems[cycleIndex % 10]}${earthlyBranches[cycleIndex % 12]}';
   }
 
@@ -676,8 +1192,21 @@ class _ClockPageState extends State<ClockPage>
       1,
       52,
     );
-    return '${time.year}年（${_sexagenaryYear(time.year)}年）'
-        '第$currentWeek周${twoDigits(time.month)}月${twoDigits(time.day)}日 '
+    final date = '${twoDigits(time.month)}/${twoDigits(time.day)}';
+    final clock =
         '${twoDigits(time.hour)}:${twoDigits(time.minute)}:${twoDigits(time.second)}';
+    return switch (_language) {
+      DisplayLanguage.chinese =>
+        '${time.year}年（${_sexagenaryYear(time.year)}年）'
+            '第$currentWeek周${twoDigits(time.month)}月${twoDigits(time.day)}日 $clock',
+      DisplayLanguage.traditionalChinese =>
+        '${time.year}年（${_sexagenaryYear(time.year)}年）'
+            '第$currentWeek週${twoDigits(time.month)}月${twoDigits(time.day)}日 $clock',
+      DisplayLanguage.english =>
+        '${_sexagenaryYear(time.year)} Year ${time.year} | Week $currentWeek | $date | $clock',
+      DisplayLanguage.japanese =>
+        '${time.year}年（${_sexagenaryYear(time.year)}年）'
+            '第$currentWeek週${twoDigits(time.month)}月${twoDigits(time.day)}日 $clock',
+    };
   }
 }

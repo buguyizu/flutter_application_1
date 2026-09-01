@@ -2,6 +2,54 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+enum DisplayLanguage { chinese, traditionalChinese, english, japanese }
+
+enum AppThemePreset {
+  chronicleIndigo,
+  jingshiJade,
+  moonPhaseGold,
+  cinnabarRed,
+  midnightInk,
+  bambooShade,
+}
+
+enum AppThemeOption {
+  chronicleIndigoLight,
+  jingshiJadeLight,
+  moonPhaseGoldLight,
+  cinnabarRedLight,
+  midnightInkDark,
+  bambooShadeDark,
+}
+
+extension AppThemePresetData on AppThemePreset {
+  Color get seedColor => switch (this) {
+    AppThemePreset.chronicleIndigo => const Color(0xFF3949AB),
+    AppThemePreset.jingshiJade => const Color(0xFF00796B),
+    AppThemePreset.moonPhaseGold => const Color(0xFFB7791F),
+    AppThemePreset.cinnabarRed => const Color(0xFFC62828),
+    AppThemePreset.midnightInk => const Color(0xFF263238),
+    AppThemePreset.bambooShade => const Color(0xFF004D40),
+  };
+}
+
+extension AppThemeOptionData on AppThemeOption {
+  AppThemePreset get preset => switch (this) {
+    AppThemeOption.chronicleIndigoLight => AppThemePreset.chronicleIndigo,
+    AppThemeOption.jingshiJadeLight => AppThemePreset.jingshiJade,
+    AppThemeOption.moonPhaseGoldLight => AppThemePreset.moonPhaseGold,
+    AppThemeOption.cinnabarRedLight => AppThemePreset.cinnabarRed,
+    AppThemeOption.midnightInkDark => AppThemePreset.midnightInk,
+    AppThemeOption.bambooShadeDark => AppThemePreset.bambooShade,
+  };
+
+  ThemeMode get themeMode => switch (this) {
+    AppThemeOption.midnightInkDark ||
+    AppThemeOption.bambooShadeDark => ThemeMode.dark,
+    _ => ThemeMode.light,
+  };
+}
+
 enum ClockDialRing {
   months,
   weeks,
@@ -11,6 +59,7 @@ enum ClockDialRing {
   branches,
   meridians,
   minutes,
+  seconds,
 }
 
 extension ClockDialRingMetrics on ClockDialRing {
@@ -25,6 +74,7 @@ extension ClockDialRingMetrics on ClockDialRing {
       ClockDialRing.branches => hourRadius * 0.68,
       ClockDialRing.meridians => hourRadius * 0.56,
       ClockDialRing.minutes => hourRadius * 0.45 + 12,
+      ClockDialRing.seconds => hourRadius * 0.15,
     };
   }
 
@@ -37,6 +87,7 @@ extension ClockDialRingMetrics on ClockDialRing {
     ClockDialRing.branches => 18,
     ClockDialRing.meridians => 15,
     ClockDialRing.minutes => 7,
+    ClockDialRing.seconds => 0,
   };
 
   double get hoverWidth => switch (this) {
@@ -48,15 +99,31 @@ extension ClockDialRingMetrics on ClockDialRing {
     ClockDialRing.branches => 38,
     ClockDialRing.meridians => 32,
     ClockDialRing.minutes => 12,
+    ClockDialRing.seconds => 0,
+  };
+
+  Color get hoverColor => switch (this) {
+    ClockDialRing.months => const Color(0xFFFFD1DC),
+    ClockDialRing.weeks => const Color(0xFFBDE3F8),
+    ClockDialRing.days => const Color(0xFFC8F7C5),
+    ClockDialRing.hours => const Color(0xFFBDE3F8),
+    ClockDialRing.branchNumbers => const Color(0xFFFFE09A),
+    ClockDialRing.branches => const Color(0xFFE8C7F3),
+    ClockDialRing.meridians => const Color(0xFFB8F0E1),
+    ClockDialRing.minutes => const Color(0xFFFFE0B2),
+    ClockDialRing.seconds => const Color(0xFFFFE0B2),
   };
 }
 
 class ClockPainter extends CustomPainter {
   final DateTime now;
   final ClockDialRing? hoveredRing;
+  final Set<ClockDialRing> visibleRings;
+  final DisplayLanguage language;
+  final ColorScheme colorScheme;
   final bool isBranchNumbersRotating;
   final double branchNumbersRotation;
-  final List<String> earthBranches = const [
+  static const List<String> _earthBranches = [
     '子',
     '丑',
     '寅',
@@ -70,8 +137,21 @@ class ClockPainter extends CustomPainter {
     '戌',
     '亥',
   ];
-
-  final List<String> meridians = const [
+  static const List<String> _englishEarthBranches = [
+    'Zi',
+    'Chou',
+    'Yin',
+    'Mao',
+    'Chen',
+    'Si',
+    'Wu',
+    'Wei',
+    'Shen',
+    'You',
+    'Xu',
+    'Hai',
+  ];
+  static const List<String> _meridians = [
     '胆经',
     '肝经',
     '肺经',
@@ -85,8 +165,21 @@ class ClockPainter extends CustomPainter {
     '心包经',
     '三焦经',
   ];
-
-  static const List<String> yakshaGeneralsByDialPosition = [
+  static const List<String> _englishMeridians = [
+    'Gallbladder',
+    'Liver',
+    'Lung',
+    'Large Intestine',
+    'Stomach',
+    'Spleen',
+    'Heart',
+    'Small Intestine',
+    'Bladder',
+    'Kidney',
+    'Pericardium',
+    'Triple Burner',
+  ];
+  static const List<String> _yakshaGeneralsByDialPosition = [
     '招杜罗',
     '真达罗',
     '摩虎罗',
@@ -100,27 +193,118 @@ class ClockPainter extends CustomPainter {
     '宫毗罗',
     '毗羯罗',
   ];
-
-  final List<String> months = const [
-    '一月',
-    '二月',
-    '三月',
-    '四月',
-    '五月',
-    '六月',
-    '七月',
-    '八月',
-    '九月',
-    '十月',
-    '十一月',
-    '十二月',
+  static const List<String> _romanizedYakshaGeneralsByDialPosition = [
+    'Catura',
+    'Candala',
+    'Mahoraga',
+    'Pajra',
+    'Indra',
+    'Sandila',
+    'Anila',
+    'Andira',
+    'Mihira',
+    'Vajra',
+    'Kumbhira',
+    'Vikala',
   ];
+
+  String _branchLabel(int index) => switch (language) {
+    DisplayLanguage.chinese => _earthBranches[index],
+    DisplayLanguage.traditionalChinese => _earthBranches[index],
+    DisplayLanguage.english => _englishEarthBranches[index],
+    DisplayLanguage.japanese => _earthBranches[index],
+  };
+
+  String _meridianLabel(int index) => switch (language) {
+    DisplayLanguage.chinese => _meridians[index],
+    DisplayLanguage.traditionalChinese => const [
+      '膽經',
+      '肝經',
+      '肺經',
+      '大腸經',
+      '胃經',
+      '脾經',
+      '心經',
+      '小腸經',
+      '膀胱經',
+      '腎經',
+      '心包經',
+      '三焦經',
+    ][index],
+    DisplayLanguage.english => _englishMeridians[index],
+    DisplayLanguage.japanese => _meridians[index],
+  };
+
+  String _monthLabel(int index) => switch (language) {
+    DisplayLanguage.chinese => '${index + 1}月',
+    DisplayLanguage.traditionalChinese => '${index + 1}月',
+    DisplayLanguage.english => const [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ][index],
+    DisplayLanguage.japanese => '${index + 1}月',
+  };
+
+  String _generalLabel(int index) => switch (language) {
+    DisplayLanguage.chinese => '${_yakshaGeneralsByDialPosition[index]}大将',
+    DisplayLanguage.traditionalChinese =>
+      '${_yakshaGeneralsByDialPosition[index]}大將',
+    DisplayLanguage.english => _romanizedYakshaGeneralsByDialPosition[index],
+    DisplayLanguage.japanese => '${_yakshaGeneralsByDialPosition[index]}大将',
+  };
+
+  String _weekLabel(int number) => switch (language) {
+    DisplayLanguage.chinese => '$number周',
+    DisplayLanguage.traditionalChinese => '$number週',
+    DisplayLanguage.english => 'W$number',
+    DisplayLanguage.japanese => '$number週',
+  };
+
   ClockPainter(
     this.now, {
     this.hoveredRing,
+    this.visibleRings = const {
+      ClockDialRing.months,
+      ClockDialRing.weeks,
+      ClockDialRing.days,
+      ClockDialRing.hours,
+      ClockDialRing.branchNumbers,
+      ClockDialRing.branches,
+      ClockDialRing.meridians,
+      ClockDialRing.minutes,
+      ClockDialRing.seconds,
+    },
+    this.language = DisplayLanguage.chinese,
+    required this.colorScheme,
     this.isBranchNumbersRotating = false,
     this.branchNumbersRotation = 0,
   });
+
+  bool _isVisible(ClockDialRing ring) => visibleRings.contains(ring);
+
+  double _rotationPulse() {
+    if (!isBranchNumbersRotating) {
+      return 0;
+    }
+    final progress = (branchNumbersRotation / (2 * pi)).clamp(0.0, 1.0);
+    final fadeIn = Curves.easeOutCubic.transform(
+      (progress / 0.14).clamp(0.0, 1.0),
+    );
+    final fadeOut = Curves.easeInCubic.transform(
+      ((1 - progress) / 0.18).clamp(0.0, 1.0),
+    );
+    return fadeIn * fadeOut;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -131,15 +315,27 @@ class ClockPainter extends CustomPainter {
     double maxRadius = min(size.width, size.height) / 2 - 10;
 
     // 1. 最外层：月份圈
-    _drawMonths(canvas, center, maxRadius);
+    if (_isVisible(ClockDialRing.months)) {
+      _drawMonths(canvas, center, maxRadius);
+    }
 
     // 2. 周数圈 - 位于月份圈内侧（每年52周）
     double dayOfYearRadius = maxRadius * 0.975;
-    _drawWeeks(canvas, center, dayOfYearRadius);
+    if (_isVisible(ClockDialRing.weeks)) {
+      _drawWeeks(canvas, center, dayOfYearRadius);
+    }
 
     // 3. 年天数圈 - 位于周数圈内侧（365/366天）
     double weekRadius = maxRadius * 0.925;
-    _drawDaysOfYear(canvas, center, weekRadius);
+    if (_isVisible(ClockDialRing.days)) {
+      _drawDaysOfYear(canvas, center, weekRadius);
+    }
+
+    if (isBranchNumbersRotating &&
+        _isVisible(ClockDialRing.branchNumbers) &&
+        _isVisible(ClockDialRing.branches)) {
+      _drawRotatingPageRays(canvas, center, size, maxRadius);
+    }
 
     // 3. 24小时表盘 (原内容作为核心) - 位于月份圈内侧
     double hourRadius = maxRadius * 0.86;
@@ -152,65 +348,123 @@ class ClockPainter extends CustomPainter {
 
     // 背景与外框 (基于 hourRadius)
     _drawDial(canvas, center, hourRadius);
-    if (isBranchNumbersRotating) {
+    if (isBranchNumbersRotating &&
+        _isVisible(ClockDialRing.branchNumbers) &&
+        _isVisible(ClockDialRing.branches)) {
       _drawBranchAndGeneralCelebration(canvas, center, maxRadius);
     }
+    _drawHoveredInnerRing(canvas, center, maxRadius);
 
     // 刻度与数字
     _drawTicks(canvas, center, hourRadius);
-    _drawNumbers(canvas, center, hourRadius * 0.91);
+    if (_isVisible(ClockDialRing.hours)) {
+      _drawNumbers(canvas, center, hourRadius * 0.91);
+    }
 
     // 4. 地支
-    _drawEarthBranches(canvas, center, hourRadius * 0.68);
+    if (_isVisible(ClockDialRing.branches)) {
+      _drawEarthBranches(canvas, center, hourRadius * 0.68);
+    }
 
     // 5. 经络
-    _drawMeridians(canvas, center, hourRadius * 0.56);
+    if (_isVisible(ClockDialRing.meridians)) {
+      _drawMeridians(canvas, center, hourRadius * 0.56);
+    }
 
     // 5.5 分钟圈（放在心经圈以内）
-    _drawMiniteNumbers(canvas, center, hourRadius * 0.45);
+    if (_isVisible(ClockDialRing.minutes)) {
+      _drawMiniteNumbers(canvas, center, hourRadius * 0.45);
+    }
 
     // 6. 小秒盘
-    _drawSecondsDial(canvas, secondsCenter, secondsRadius);
+    if (_isVisible(ClockDialRing.seconds)) {
+      _drawSecondsDial(canvas, secondsCenter, secondsRadius);
+    }
 
-    if (isBranchNumbersRotating) {
+    if (isBranchNumbersRotating &&
+        _isVisible(ClockDialRing.branchNumbers) &&
+        _isVisible(ClockDialRing.branches)) {
       _drawBranchAndGeneralSpotlight(canvas, center, maxRadius);
     }
-    _drawHoveredRing(canvas, center, maxRadius);
 
     // 指针
     _drawHands(canvas, center, hourRadius, secondsCenter, secondsRadius);
 
-    canvas.drawCircle(center, 6, Paint()..color = const Color(0xFF8E44AD));
-    if (isBranchNumbersRotating) {
+    canvas.drawCircle(center, 6, Paint()..color = colorScheme.onSurface);
+    if (isBranchNumbersRotating && _isVisible(ClockDialRing.branches)) {
       _drawFeaturedEarthBranches(canvas, center, hourRadius * 0.68);
+    }
+    if (isBranchNumbersRotating && _isVisible(ClockDialRing.branchNumbers)) {
       _drawFeaturedYakshaGenerals(canvas, center, hourRadius);
     }
   }
 
-  void _drawHoveredRing(Canvas canvas, Offset center, double radius) {
-    if (hoveredRing != null) {
-      _drawRingGlow(canvas, center, radius, hoveredRing!);
+  void _drawHoveredInnerRing(Canvas canvas, Offset center, double radius) {
+    final ring = hoveredRing;
+    if (ring == null ||
+        !_isVisible(ring) ||
+        ring == ClockDialRing.months ||
+        ring == ClockDialRing.weeks ||
+        ring == ClockDialRing.days ||
+        ring == ClockDialRing.seconds) {
+      return;
     }
+    _drawRingHoverBand(canvas, center, ring.radiusFor(radius), ring);
   }
 
-  void _drawRingGlow(
+  void _drawRingHoverBand(
     Canvas canvas,
     Offset center,
-    double radius,
+    double ringRadius,
     ClockDialRing ring,
   ) {
-    final ringRadius = ring.radiusFor(radius);
-    final ringWidth = ring.hoverWidth;
-
     canvas.drawCircle(
       center,
       ringRadius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = ringWidth
-        ..color = const Color(0xFFFFD166).withValues(alpha: 0.36)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+        ..strokeWidth = ring.hoverWidth
+        ..color = ring.hoverColor.withValues(alpha: 0.32),
     );
+  }
+
+  void _drawRotatingPageRays(
+    Canvas canvas,
+    Offset center,
+    Size size,
+    double outerRadius,
+  ) {
+    final pulse = _rotationPulse();
+    final rayStartRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
+    final rayEndRadius = sqrt(
+      size.width * size.width + size.height * size.height,
+    );
+    const rayCount = 60;
+
+    for (int index = 0; index < rayCount; index += 1) {
+      final angle = -branchNumbersRotation + index * 2 * pi / rayCount;
+      final isMajorRay = index % 4 == 0;
+      final start = _pointOnCircle(center, rayStartRadius, angle);
+      final end = _pointOnCircle(center, rayEndRadius, angle);
+      final rayPaint = Paint()
+        ..strokeCap = StrokeCap.butt
+        ..strokeWidth = isMajorRay ? 20 : 6
+        ..color = const Color(
+          0xFFFFD56A,
+        ).withValues(alpha: (isMajorRay ? 0.34 : 0.12) * pulse)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, isMajorRay ? 6 : 2);
+      canvas.drawLine(start, end, rayPaint);
+      if (isMajorRay) {
+        canvas.drawLine(
+          start,
+          end,
+          Paint()
+            ..strokeWidth = 4
+            ..strokeCap = StrokeCap.butt
+            ..color = const Color(0xFFFFF4B8).withValues(alpha: 0.72 * pulse),
+        );
+      }
+    }
   }
 
   void _drawBranchAndGeneralCelebration(
@@ -221,12 +475,15 @@ class ClockPainter extends CustomPainter {
     final branchRadius = ClockDialRing.branches.radiusFor(outerRadius);
     final generalRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
     final bandRadius = (branchRadius + generalRadius) / 2;
-    final bandWidth = generalRadius - branchRadius + 40;
+    final bandWidth = generalRadius - branchRadius + 52;
     final bandRect = Rect.fromCircle(center: center, radius: bandRadius);
     final phase = branchNumbersRotation;
     final progress = (phase / (2 * pi)).clamp(0.0, 1.0);
-    final settle = progress > 0.82 ? (1 - progress) / 0.18 : 1.0;
-    final pulse = settle;
+    final fadeOut = Curves.easeInCubic.transform(
+      ((1 - progress) / 0.18).clamp(0.0, 1.0),
+    );
+    final settle = fadeOut;
+    final pulse = _rotationPulse();
     final branchIndex = ((now.hour + 1) % 24) ~/ 2;
     final selectedStartAngle =
         _degToRad(branchIndex * 30 + 165) - pi / 2 - phase;
@@ -307,17 +564,17 @@ class ClockPainter extends CustomPainter {
   ) {
     final branchRadius = ClockDialRing.branches.radiusFor(outerRadius);
     final generalRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
-    final innerEdge = branchRadius - 18;
-    final outerEdge = generalRadius + 12;
+    final innerEdge = branchRadius - 24;
+    final outerEdge = generalRadius + 18;
     final bandRadius = (innerEdge + outerEdge) / 2;
     final bandWidth = outerEdge - innerEdge;
-    const pulse = 1.0;
+    final pulse = _rotationPulse();
 
     canvas.saveLayer(null, Paint());
     canvas.drawCircle(
       center,
       outerRadius + 14,
-      Paint()..color = Colors.white.withValues(alpha: 0.38),
+      Paint()..color = Colors.white.withValues(alpha: 0.50 * pulse),
     );
     canvas.drawCircle(
       center,
@@ -331,7 +588,7 @@ class ClockPainter extends CustomPainter {
 
     final glowPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = bandWidth + 12
+      ..strokeWidth = bandWidth + 18
       ..color = const Color(0xFFFFD56A).withValues(alpha: 0.68 * pulse)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
     canvas.drawCircle(center, bandRadius, glowPaint);
@@ -361,7 +618,11 @@ class ClockPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 14
       ..strokeCap = StrokeCap.butt
-      ..color = const Color(0xFF3498DB).withOpacity(0.3); // 蓝色高亮
+      ..color = const Color(0xFFBDE3F8); // 与小盘选中扇区一致
+
+    if (hoveredRing == ClockDialRing.weeks) {
+      _drawRingHoverBand(canvas, center, radius - 7, ClockDialRing.weeks);
+    }
 
     final angleStep = 2 * pi / weekCount;
     // 让“第1周 与 最后一周”之间的分隔线落在正下方。
@@ -383,10 +644,12 @@ class ClockPainter extends CustomPainter {
       }
 
       textPainter.text = TextSpan(
-        text: i + 1 == currentWeek ? '${i + 1}周' : '${i + 1}',
+        text: i + 1 == currentWeek ? _weekLabel(i + 1) : '${i + 1}',
         style: TextStyle(
-          color: (i + 1 == currentWeek) ? Colors.blue[800] : Colors.black38,
-          fontSize: 7,
+          color: (i + 1 == currentWeek)
+              ? const Color(0xFF154360)
+              : Colors.black26,
+          fontSize: (i + 1 == currentWeek) ? 9 : 7,
           fontWeight: (i + 1 == currentWeek)
               ? FontWeight.bold
               : FontWeight.normal,
@@ -417,15 +680,14 @@ class ClockPainter extends CustomPainter {
         now.difference(DateTime(now.year, 1, 1)).inDays + 1;
 
     final double angleStep = 2 * pi / totalDays;
-    // 将“最后一天 与 第1天”分隔线对齐到“12月末 ↔ 1月初”的月边界。
-    // 月份圈当前基准下，该边界角度为 -11π/12。
-    final double yearBoundaryAngle = -11 * pi / 12;
+    // 将“第1天”刻度放到正下方（6点钟方向），并保持与月份环对齐。
+    final double yearBoundaryAngle = pi;
     final double startAngleOffset = yearBoundaryAngle + angleStep / 2;
 
     final Paint dayPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4
-      ..color = const Color(0xFF95A5A6).withValues(alpha: 0.55);
+      ..color = const Color(0xFF95A5A6).withValues(alpha: 0.42);
 
     final Paint currentDayPaint = Paint()
       ..style = PaintingStyle.stroke
@@ -435,17 +697,23 @@ class ClockPainter extends CustomPainter {
     final Paint midIntervalPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.2
-      ..color = const Color(0xFF95A5A6).withValues(alpha: 0.65);
+      ..color = const Color(0xFF95A5A6).withValues(alpha: 0.52);
 
     final Paint monthBoundaryPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.6
       ..color = const Color(0xFF34495E).withValues(alpha: 0.7);
 
+    if (hoveredRing == ClockDialRing.days) {
+      _drawRingHoverBand(canvas, center, radius, ClockDialRing.days);
+    }
+
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
     );
+
+    final List<Map<String, dynamic>> labelData = [];
 
     for (int i = 0; i < totalDays; i++) {
       final int dayNumber = i + 1;
@@ -493,26 +761,57 @@ class ClockPainter extends CustomPainter {
       );
 
       if (showLabel) {
-        textPainter.text = TextSpan(
-          text: isCurrentDay ? '本年第$dayNumber天' : '$dayNumber',
-          style: TextStyle(
-            color: isCurrentDay ? Colors.blue[800] : Colors.black54,
-            fontSize: isCurrentDay ? 9 : 7,
-            fontWeight: isCurrentDay ? FontWeight.bold : FontWeight.w500,
-          ),
-        );
-        textPainter.layout();
-
-        final labelPosition = _pointOnCircle(center, radius - 16, angle);
-        canvas.save();
-        canvas.translate(labelPosition.dx, labelPosition.dy);
-        canvas.rotate(angle);
-        textPainter.paint(
-          canvas,
-          Offset(-textPainter.width / 2, -textPainter.height / 2),
-        );
-        canvas.restore();
+        final Offset labelPosition = _pointOnCircle(center, radius - 16, angle);
+        labelData.add({
+          'position': labelPosition,
+          'angle': angle,
+          'isCurrentDay': isCurrentDay,
+          'text': isCurrentDay ? '$dayNumber／$totalDays' : '$dayNumber',
+        });
       }
+    }
+
+    final Offset currentLabelPosition =
+        labelData.firstWhere(
+              (label) => label['isCurrentDay'] as bool,
+              orElse: () => <String, dynamic>{},
+            )['position']
+            as Offset? ??
+        Offset.zero;
+
+    for (int i = 0; i < labelData.length; i++) {
+      final Map<String, dynamic> label = labelData[i];
+      final bool isCurrentDay = label['isCurrentDay'] as bool;
+
+      if (!isCurrentDay) {
+        final Offset otherPosition = label['position'] as Offset;
+        if ((currentLabelPosition - otherPosition).distance < 12.0) {
+          continue;
+        }
+      }
+
+      final String text = label['text'] as String;
+      final double angle = label['angle'] as double;
+      final Offset labelPosition = label['position'] as Offset;
+
+      textPainter.text = TextSpan(
+        text: text,
+        style: TextStyle(
+          color: isCurrentDay ? const Color(0xFF154360) : Colors.black38,
+          fontSize: isCurrentDay ? 9 : 7,
+          fontWeight: isCurrentDay ? FontWeight.bold : FontWeight.w500,
+        ),
+      );
+      textPainter.layout();
+
+      canvas.save();
+      canvas.translate(labelPosition.dx, labelPosition.dy);
+      canvas.rotate(angle);
+      textPainter.paint(
+        canvas,
+        Offset(-textPainter.width / 2, -textPainter.height / 2),
+      );
+      canvas.restore();
     }
   }
 
@@ -528,25 +827,25 @@ class ClockPainter extends CustomPainter {
     final double yearBoundaryAngle = -11 * pi / 12;
 
     final List<Color> seasonColors = <Color>[
-      const Color(0xFFFFFFFF), // 1月 冬
-      const Color(0xFFFFF3B0), // 2月 春（淡黄）
-      const Color(0xFFFFF3B0), // 3月 春（淡黄）
-      const Color(0xFFFFF3B0), // 4月 春（淡黄）
-      const Color(0xFFB2DFDB), // 5月 夏
-      const Color(0xFFB2DFDB), // 6月 夏
-      const Color(0xFFB2DFDB), // 7月 夏
-      const Color(0xFFF8C4C4), // 8月 秋（淡红）
-      const Color(0xFFF8C4C4), // 9月 秋（淡红）
-      const Color(0xFFF8C4C4), // 10月 秋（淡红）
-      const Color(0xFFFFFFFF), // 11月 冬
-      const Color(0xFFFFFFFF), // 12月 冬
+      const Color(0xFFBDBDBD), // 1月 冬（深灰）
+      const Color(0xFFB2EBF2), // 2月 春（浅青）
+      const Color(0xFFB2EBF2), // 3月 春（浅青）
+      const Color(0xFFB2EBF2), // 4月 春（浅青）
+      const Color(0xFFF8C4C4), // 5月 夏（浅红）
+      const Color(0xFFF8C4C4), // 6月 夏（浅红）
+      const Color(0xFFF8C4C4), // 7月 夏（浅红）
+      const Color(0xFFE0E0E0), // 8月 秋（浅灰）
+      const Color(0xFFE0E0E0), // 9月 秋（浅灰）
+      const Color(0xFFE0E0E0), // 10月 秋（浅灰）
+      const Color(0xFFBDBDBD), // 11月 冬（深灰）
+      const Color(0xFFBDBDBD), // 12月 冬（深灰）
     ];
 
     final Paint highlightMonthPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 20
       ..strokeCap = StrokeCap.butt
-      ..color = const Color(0xFF9B59B6).withValues(alpha: 0.35); // 紫色高亮
+      ..color = const Color(0xFFBDE3F8); // 与小盘选中扇区一致
 
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
@@ -557,6 +856,10 @@ class ClockPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = Colors.black12;
+
+    if (hoveredRing == ClockDialRing.months) {
+      _drawRingHoverBand(canvas, center, radius, ClockDialRing.months);
+    }
 
     int daysBeforeMonth = 0;
     for (int i = 0; i < 12; i++) {
@@ -571,7 +874,7 @@ class ClockPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 20
         ..strokeCap = StrokeCap.butt
-        ..color = seasonColors[i].withValues(alpha: 0.4);
+        ..color = seasonColors[i].withValues(alpha: 0.25);
 
       // 四季背景分区：冬季为 11、12、1 月。
       canvas.drawArc(
@@ -600,9 +903,11 @@ class ClockPainter extends CustomPainter {
       final position = _pointOnCircle(center, radius, monthCenterAngle);
 
       textPainter.text = TextSpan(
-        text: months[i],
+        text: _monthLabel(i),
         style: TextStyle(
-          color: (month == currentMonth) ? Colors.purple[800] : Colors.black87,
+          color: (month == currentMonth)
+              ? const Color(0xFF154360)
+              : Colors.black54,
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
@@ -628,15 +933,15 @@ class ClockPainter extends CustomPainter {
   void _drawDial(Canvas canvas, Offset center, double radius) {
     final Paint outer = Paint()
       ..style = PaintingStyle.fill
-      ..color = const Color(0xFFECF0F1);
+      ..color = colorScheme.surfaceContainerLowest;
     final Paint outline = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
-      ..color = Colors.black54;
+      ..color = colorScheme.outline;
     final Paint inline1 = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 36
-      ..color = Colors.black12;
+      ..color = colorScheme.secondaryContainer.withValues(alpha: 0.5);
     // final Paint inline2 = Paint()
     //   ..style = PaintingStyle.stroke
     //   ..strokeWidth = 1
@@ -644,12 +949,16 @@ class ClockPainter extends CustomPainter {
 
     canvas.drawCircle(center, radius, outer);
     canvas.drawCircle(center, radius, outline);
-    canvas.drawCircle(center, radius * 0.68, inline1);
+    if (_isVisible(ClockDialRing.branches)) {
+      canvas.drawCircle(center, radius * 0.68, inline1);
+    }
     final Paint emptyBranchRing = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 24
-      ..color = const Color(0xFFD5DBDB).withOpacity(0.45);
-    canvas.drawCircle(center, radius * 0.68 + 30, emptyBranchRing);
+      ..color = colorScheme.tertiaryContainer.withValues(alpha: 0.58);
+    if (_isVisible(ClockDialRing.branchNumbers)) {
+      canvas.drawCircle(center, radius * 0.68 + 30, emptyBranchRing);
+    }
 
     // 高亮当前地支 (内层经络也一起高亮?)
     // 计算当前地支索引 (23:00-01:00 为子(0), 01:00-03:00 为丑(1)...)
@@ -668,18 +977,20 @@ class ClockPainter extends CustomPainter {
       ..strokeCap = StrokeCap.butt
       ..color = const Color(0xFFF1C40F).withOpacity(0.5); // 金黄色高亮
 
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(-branchNumbersRotation);
-    canvas.translate(-center.dx, -center.dy);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius * 0.68),
-      startAngleRad,
-      sweepAngleRad,
-      false,
-      highlightPaint,
-    );
-    canvas.restore();
+    if (_isVisible(ClockDialRing.branches)) {
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(-branchNumbersRotation);
+      canvas.translate(-center.dx, -center.dy);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius * 0.68),
+        startAngleRad,
+        sweepAngleRad,
+        false,
+        highlightPaint,
+      );
+      canvas.restore();
+    }
 
     // 高亮当前经络 (经络圈半径0.56，宽度30)
     final Paint highlightMeridianPaint = Paint()
@@ -688,21 +999,25 @@ class ClockPainter extends CustomPainter {
       ..strokeCap = StrokeCap.butt
       ..color = const Color(0xFFF1C40F).withOpacity(0.3); // 略淡一点
 
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius * 0.56),
-      startAngleRad,
-      sweepAngleRad,
-      false,
-      highlightMeridianPaint,
-    );
+    if (_isVisible(ClockDialRing.meridians)) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius * 0.56),
+        startAngleRad,
+        sweepAngleRad,
+        false,
+        highlightMeridianPaint,
+      );
+    }
 
     // 为1-24小时数字添加一个浅色背景圆环
     final Paint numberRingPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth =
           28 // 加宽一点以容纳数字
-      ..color = const Color.fromARGB(255, 20, 22, 23).withOpacity(0.05); // 更淡一点
-    canvas.drawCircle(center, radius * 0.91, numberRingPaint);
+      ..color = colorScheme.surfaceContainerHigh.withValues(alpha: 0.72);
+    if (_isVisible(ClockDialRing.hours)) {
+      canvas.drawCircle(center, radius * 0.91, numberRingPaint);
+    }
 
     // canvas.drawCircle(center, radius * 0.70, inline2);
 
@@ -724,28 +1039,35 @@ class ClockPainter extends CustomPainter {
       ..color = Colors.black54;
 
     // 24小时刻度
-    for (int i = 0; i < 24; i++) {
-      final angle = _degToRad(i * 15 + 180);
+    if (_isVisible(ClockDialRing.hours)) {
+      for (int i = 0; i < 24; i++) {
+        final angle = _degToRad(i * 15 + 180);
 
-      // 贴合外层表盘：从最外圈向内延伸
-      final start = _pointOnCircle(center, radius, angle);
-      final end = _pointOnCircle(center, radius - 10, angle);
-      canvas.drawLine(start, end, hourPaint);
+        // 贴合外层表盘：从最外圈向内延伸
+        final start = _pointOnCircle(center, radius, angle);
+        final end = _pointOnCircle(center, radius - 10, angle);
+        canvas.drawLine(start, end, hourPaint);
+      }
     }
 
     // 地支刻度
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(-branchNumbersRotation);
-    canvas.translate(-center.dx, -center.dy);
-    for (int i = 0; i < 12; i += 1) {
-      final angle = _degToRad(i * 30 + 180 + 15);
-      final start = _pointOnCircle(center, radius * 0.68 + 18, angle);
-      final end = _pointOnCircle(center, radius * 0.68 - 18, angle);
-      canvas.drawLine(start, end, branchPaint);
+    if (_isVisible(ClockDialRing.branches)) {
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(-branchNumbersRotation);
+      canvas.translate(-center.dx, -center.dy);
+      for (int i = 0; i < 12; i += 1) {
+        final angle = _degToRad(i * 30 + 180 + 15);
+        final start = _pointOnCircle(center, radius * 0.68 + 18, angle);
+        final end = _pointOnCircle(center, radius * 0.68 - 18, angle);
+        canvas.drawLine(start, end, branchPaint);
+      }
+      canvas.restore();
     }
-    canvas.restore();
 
+    if (!_isVisible(ClockDialRing.branchNumbers)) {
+      return;
+    }
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(-branchNumbersRotation);
@@ -762,9 +1084,10 @@ class ClockPainter extends CustomPainter {
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
     );
+    final normalTextOpacity = 1 - _rotationPulse() * 0.72;
     for (int i = 0; i < 12; i += 1) {
       final cellCenterAngle = _degToRad(i * 30 + 180 + 30);
-      final generalName = '${yakshaGeneralsByDialPosition[i]}大将';
+      final generalName = _generalLabel(i);
       for (
         int characterIndex = 0;
         characterIndex < generalName.length;
@@ -776,8 +1099,8 @@ class ClockPainter extends CustomPainter {
         final position = _pointOnCircle(center, generalRadius, characterAngle);
         emptyRingTextPainter.text = TextSpan(
           text: generalName[characterIndex],
-          style: const TextStyle(
-            color: Color(0xFF5D6D7E),
+          style: TextStyle(
+            color: const Color(0xFF5D6D7E).withValues(alpha: normalTextOpacity),
             fontSize: 11,
             fontWeight: FontWeight.normal,
           ),
@@ -804,6 +1127,7 @@ class ClockPainter extends CustomPainter {
     Offset center,
     double branchRadius,
   ) {
+    final pulse = _rotationPulse();
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
@@ -818,16 +1142,25 @@ class ClockPainter extends CustomPainter {
       final angle = _degToRad(i * 15 + 180);
       final position = _pointOnCircle(center, branchRadius, angle);
       textPainter.text = TextSpan(
-        style: const TextStyle(
-          color: Color(0xFF6C3483),
+        style: TextStyle(
+          color: const Color(0xFF6C3483).withValues(alpha: pulse),
           fontWeight: FontWeight.w800,
           fontSize: 12,
           fontFamily: 'Microsoft YaHei',
-          shadows: [Shadow(color: Colors.white, blurRadius: 3)],
+          shadows: [
+            Shadow(color: Colors.white.withValues(alpha: pulse), blurRadius: 3),
+          ],
         ),
         children: [
-          TextSpan(text: earthBranches[branchIndex]),
-          const TextSpan(text: '时', style: TextStyle(fontSize: 12)),
+          TextSpan(text: _branchLabel(branchIndex)),
+          TextSpan(
+            text: language == DisplayLanguage.english
+                ? ''
+                : language == DisplayLanguage.traditionalChinese
+                ? '時'
+                : '时',
+            style: const TextStyle(fontSize: 12),
+          ),
         ],
       );
       textPainter.layout();
@@ -848,6 +1181,7 @@ class ClockPainter extends CustomPainter {
     Offset center,
     double hourRadius,
   ) {
+    final pulse = _rotationPulse();
     final generalRadius = hourRadius * 0.68 + 30;
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
@@ -860,7 +1194,7 @@ class ClockPainter extends CustomPainter {
     canvas.translate(-center.dx, -center.dy);
     for (int i = 0; i < 12; i += 1) {
       final cellCenterAngle = _degToRad(i * 30 + 180 + 30);
-      final generalName = '${yakshaGeneralsByDialPosition[i]}大将';
+      final generalName = _generalLabel(i);
       for (
         int characterIndex = 0;
         characterIndex < generalName.length;
@@ -872,11 +1206,16 @@ class ClockPainter extends CustomPainter {
         final position = _pointOnCircle(center, generalRadius, characterAngle);
         textPainter.text = TextSpan(
           text: generalName[characterIndex],
-          style: const TextStyle(
-            color: Color(0xFF4A235A),
+          style: TextStyle(
+            color: const Color(0xFF7D6608).withValues(alpha: pulse),
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            shadows: [Shadow(color: Colors.white, blurRadius: 3)],
+            shadows: [
+              Shadow(
+                color: Colors.white.withValues(alpha: pulse),
+                blurRadius: 3,
+              ),
+            ],
           ),
         );
         textPainter.layout();
@@ -894,6 +1233,7 @@ class ClockPainter extends CustomPainter {
   }
 
   void _drawEarthBranches(Canvas canvas, Offset center, double radius) {
+    final normalTextOpacity = 1 - _rotationPulse() * 0.72;
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
@@ -909,17 +1249,21 @@ class ClockPainter extends CustomPainter {
       final position = _pointOnCircle(center, radius, angle);
 
       textPainter.text = TextSpan(
-        style: const TextStyle(
-          color: Color(0xFF8E44AD),
+        style: TextStyle(
+          color: const Color(0xFF8E44AD).withValues(alpha: normalTextOpacity),
           fontWeight: FontWeight.bold,
-          fontSize: 14,
+          fontSize: 12,
           fontFamily: 'Microsoft YaHei',
         ),
         children: [
-          TextSpan(text: earthBranches[branchIndex]),
-          const TextSpan(
-            text: '时',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          TextSpan(text: _branchLabel(branchIndex)),
+          TextSpan(
+            text: language == DisplayLanguage.english
+                ? ''
+                : language == DisplayLanguage.traditionalChinese
+                ? '時'
+                : '时',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
           ),
         ],
       );
@@ -942,7 +1286,7 @@ class ClockPainter extends CustomPainter {
     final Paint ringPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 30
-      ..color = const Color(0xFFD5DBDB).withOpacity(0.4);
+      ..color = const Color(0xFFD5DBDB).withValues(alpha: 0.28);
     canvas.drawCircle(center, radius, ringPaint);
 
     final textPainter = TextPainter(
@@ -956,9 +1300,9 @@ class ClockPainter extends CustomPainter {
       final position = _pointOnCircle(center, radius, angle);
 
       textPainter.text = TextSpan(
-        text: meridians[index],
+        text: _meridianLabel(index),
         style: const TextStyle(
-          color: Color(0xFF16A085), // 蓝绿色
+          color: Color(0xFF78909C), // 低对比度灰蓝
           fontWeight: FontWeight.normal,
           fontSize: 10,
           fontFamily: 'Microsoft YaHei',
@@ -1005,7 +1349,7 @@ class ClockPainter extends CustomPainter {
     );
     final selectedHourBgPaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = const Color(0xFF85C1E9).withValues(alpha: 0.45);
+      ..color = const Color(0xFFBDE3F8);
 
     final int currentHourNumber = now.hour == 0 ? 24 : now.hour;
 
@@ -1052,17 +1396,17 @@ class ClockPainter extends CustomPainter {
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
-      ..color = const Color(0xFF90A4AE);
+      ..color = colorScheme.outlineVariant;
     canvas.drawCircle(center, radius + 12, ringPaint);
 
     final majorTickPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
-      ..color = const Color(0xFF546E7A);
+      ..color = colorScheme.outline;
     final minorTickPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
-      ..color = const Color(0xFFB0BEC5);
+      ..color = colorScheme.outlineVariant;
 
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
@@ -1087,9 +1431,9 @@ class ClockPainter extends CustomPainter {
 
       textPainter.text = TextSpan(
         text: minuteText,
-        style: const TextStyle(
-          color: Color(0xFF455A64),
-          fontWeight: FontWeight.w700,
+        style: TextStyle(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w500,
           fontSize: 11,
         ),
       );
@@ -1113,6 +1457,14 @@ class ClockPainter extends CustomPainter {
 
     canvas.drawCircle(center, radius, bgPaint);
     canvas.drawCircle(center, radius, borderPaint);
+    if (hoveredRing == ClockDialRing.seconds) {
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = ClockDialRing.seconds.hoverColor.withValues(alpha: 0.4),
+      );
+    }
 
     final Paint majorPaint = Paint()
       ..strokeWidth = 2
@@ -1174,38 +1526,57 @@ class ClockPainter extends CustomPainter {
     final hourAngle = _degToRad((now.hour + now.minute / 60) * 15) + pi;
     final minuteAngle = _degToRad(now.minute * 6);
     final secondAngle = _degToRad(now.second * 6);
+    final isDarkTheme = colorScheme.brightness == Brightness.dark;
 
     final hourPaint = Paint()
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round
-      ..color = Colors.black45;
+      ..color = isDarkTheme ? colorScheme.primaryContainer : Colors.black45;
     final minutePaint = Paint()
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round
-      ..color = Colors.black38;
+      ..color = isDarkTheme ? colorScheme.secondaryContainer : Colors.black38;
     final secondPaint = Paint()
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round
-      ..color = Colors.red;
+      ..color = isDarkTheme ? colorScheme.error : Colors.red;
+
+    final hourEnd = _pointOnCircle(center, radius * 0.84, hourAngle);
+    final minuteEnd = _pointOnCircle(center, radius * 0.39, minuteAngle);
+    final secondEnd = _pointOnCircle(
+      secondsCenter,
+      secondsRadius * 0.9,
+      secondAngle,
+    );
+
+    if (isDarkTheme) {
+      final hourGlow = Paint()
+        ..strokeWidth = 14
+        ..strokeCap = StrokeCap.round
+        ..color = colorScheme.primary.withValues(alpha: 0.54)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      final minuteGlow = Paint()
+        ..strokeWidth = 10
+        ..strokeCap = StrokeCap.round
+        ..color = colorScheme.secondary.withValues(alpha: 0.48)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      final secondGlow = Paint()
+        ..strokeWidth = 5
+        ..strokeCap = StrokeCap.round
+        ..color = colorScheme.error.withValues(alpha: 0.58)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawLine(center, hourEnd, hourGlow);
+      canvas.drawLine(center, minuteEnd, minuteGlow);
+      canvas.drawLine(secondsCenter, secondEnd, secondGlow);
+      canvas.drawCircle(secondsCenter, 7, secondGlow);
+    }
 
     // 时分针 基于大表盘圆心 center
-    canvas.drawLine(
-      center,
-      _pointOnCircle(center, radius * 0.84, hourAngle),
-      hourPaint,
-    );
-    canvas.drawLine(
-      center,
-      _pointOnCircle(center, radius * 0.39, minuteAngle),
-      minutePaint,
-    );
+    canvas.drawLine(center, hourEnd, hourPaint);
+    canvas.drawLine(center, minuteEnd, minutePaint);
 
     // 秒针 基于小表盘圆心 secondsCenter
-    canvas.drawLine(
-      secondsCenter,
-      _pointOnCircle(secondsCenter, secondsRadius * 0.9, secondAngle),
-      secondPaint,
-    );
+    canvas.drawLine(secondsCenter, secondEnd, secondPaint);
     // 绘制小秒盘中心红点
     canvas.drawCircle(secondsCenter, 3, secondPaint);
   }
@@ -1223,6 +1594,10 @@ class ClockPainter extends CustomPainter {
   bool shouldRepaint(covariant ClockPainter oldDelegate) =>
       oldDelegate.now.second != now.second ||
       oldDelegate.hoveredRing != hoveredRing ||
+      oldDelegate.visibleRings.length != visibleRings.length ||
+      !oldDelegate.visibleRings.every(visibleRings.contains) ||
+      oldDelegate.language != language ||
+      oldDelegate.colorScheme != colorScheme ||
       oldDelegate.isBranchNumbersRotating != isBranchNumbersRotating ||
       oldDelegate.branchNumbersRotation != branchNumbersRotation;
 }

@@ -74,6 +74,98 @@ flutter doctor
 
 确认环境通过后再启动 Windows 桌面端。
 
+## 发布与部署
+
+### 1. 更新版本号
+
+修改项目根目录下的 `pubspec.yaml` 中的版本号，例如：
+
+```yaml
+version: 1.0.0+1
+```
+
+升级为：
+
+```yaml
+version: 1.0.1+2
+```
+
+其中：
+
+- `1.0.1`：对外显示版本号
+- `2`：构建编号，每次发版递增
+
+### 2. 构建 Web 发布包
+
+在项目根目录执行：
+
+```bash
+flutter clean
+flutter pub get
+flutter build web --release --base-href /time/
+```
+
+如果要部署到网站根目录，则使用：
+
+```bash
+flutter build web --release --base-href /
+```
+
+### 3. 部署到 Nginx
+
+将构建产物复制到站点目录：
+
+```bash
+sudo rm -rf /var/www/time/*
+sudo cp -r build/web/* /var/www/time/
+```
+
+检查配置并重载：
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+访问方式：
+
+```text
+http://你的域名/time/
+```
+
+或：
+
+```text
+http://服务器IP/time/
+```
+
+### 4. 直接本机预览构建结果
+
+如果想在本机查看打包后的页面，不依赖正式 Nginx，可在项目根目录执行：
+
+```bash
+python -m http.server 8080 --directory build/web
+```
+
+然后访问：
+
+```text
+http://127.0.0.1:8080/
+```
+
+如果你使用了 `/time/` 的 context path，访问时需要使用：
+
+```text
+http://127.0.0.1:8080/time/
+```
+
+### 5. 常见注意事项
+
+- `base-href` 和 Nginx 的访问路径必须一致
+- 访问 `/time/` 时，必须保证 `build/web` 中的资源被正确放到 `/var/www/time/`
+- 每次更新代码后，需要重新执行 `flutter build web --release`
+- 如果页面仍然显示旧内容，请先清理旧文件再复制新文件
+
 ## 参考
 
 - [Flutter 文档](https://docs.flutter.dev/)
