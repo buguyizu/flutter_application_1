@@ -26,6 +26,8 @@ class ClockPage extends StatefulWidget {
 
 class _ClockPageState extends State<ClockPage>
     with SingleTickerProviderStateMixin {
+  static const String _appVersion = '1.0.1+1';
+
   // 皇极经世纪年锚点：日甲一元、月子一会、星甲一运、辰子一世。
   static const int _historicalEraStartYear = -67046;
   // 连续六十甲子基准：天文纪年4年为甲子年。
@@ -40,14 +42,15 @@ class _ClockPageState extends State<ClockPage>
   ClockDialRing? _hoveredClockRing;
   Offset? _clockTooltipPosition;
   double _clockScale = 1.3;
+  bool _leftDialColumnCollapsed = false;
+  bool _protectionExpanded = false;
   late DisplayLanguage _language;
   final Set<ClockDialRing> _visibleClockRings = Set.of(ClockDialRing.values);
   late final AnimationController _branchNumberRotationController;
   late final ScrollController _horizontalScrollController;
 
   DateTime _chinaNow() {
-    // 固定使用中国标准时间 UTC+08:00，避免受本机时区影响。
-    return DateTime.now().toUtc().add(const Duration(hours: 8));
+    return DateTime.now();
   }
 
   @override
@@ -77,18 +80,27 @@ class _ClockPageState extends State<ClockPage>
 
   @override
   Widget build(BuildContext context) {
+    const double leftDialColumnHeight = 4 * 210 + 3 * 24;
+    final double clockContainerSize = 60 + 540 * _clockScale;
+    final double clockVerticalOffset = max(
+      0.0,
+      (leftDialColumnHeight - clockContainerSize) / 2,
+    );
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
-        child: Scrollbar(
-          controller: _horizontalScrollController,
-          thumbVisibility: true,
-          trackVisibility: true,
-          child: SingleChildScrollView(
+        child: Center(
+          child: Scrollbar(
             controller: _horizontalScrollController,
-            scrollDirection: Axis.horizontal,
-            child: Container(
-              margin: const EdgeInsets.all(8),
+            thumbVisibility: true,
+            trackVisibility: true,
+            child: SingleChildScrollView(
+              controller: _horizontalScrollController,
+              scrollDirection: Axis.horizontal,
+              child: Center(
+                child: Container(
+                  margin: const EdgeInsets.all(8),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 border: Border.all(
@@ -98,52 +110,63 @@ class _ClockPageState extends State<ClockPage>
               ),
               child: Scrollbar(
                 child: SingleChildScrollView(
-                  child: IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          width: 206,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildPlaceholderBranchDial(_now),
-                              const SizedBox(height: 24),
-                              _buildThirtySegmentDial(_now),
-                              const SizedBox(height: 24),
-                              _buildTwelveSegmentDial(
-                                _huangjiShiIndex(_now),
-                                _now.year,
-                              ),
-                              const SizedBox(height: 24),
-                              _buildYearDial(_now),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          width: 60 + 540 * _clockScale,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 30),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Positioned(
-                                  left: 64,
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Text(
-                                    _formatTime(_now),
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.indigo,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AnimatedContainer(
+                              key: const ValueKey('left_panel_container'),
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeInOut,
+                              width: 206,
+                              alignment: Alignment.centerLeft,
+                              child: AnimatedOpacity(
+                                duration: const Duration(milliseconds: 180),
+                                opacity: _leftDialColumnCollapsed ? 0 : 1,
+                                curve: Curves.easeInOut,
+                                child: IgnorePointer(
+                                  ignoring: _leftDialColumnCollapsed,
+                                  child: SizedBox(
+                                    width: 206,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildPlaceholderBranchDial(_now),
+                                        const SizedBox(height: 24),
+                                        _buildThirtySegmentDial(_now),
+                                        const SizedBox(height: 24),
+                                        _buildTwelveSegmentDial(
+                                          _huangjiShiIndex(_now),
+                                          _now.year,
+                                        ),
+                                        const SizedBox(height: 24),
+                                        _buildYearDial(_now),
+                                      ],
                                     ),
                                   ),
                                 ),
-                                Center(
-                                  child: AspectRatio(
-                                    aspectRatio: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(top: clockVerticalOffset),
+                          child: SizedBox(
+                            width: clockContainerSize,
+                            height: clockContainerSize + 52,
+                            child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 30),
+                            child: SizedBox(
+                              width: clockContainerSize,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  SizedBox.square(
+                                    dimension: clockContainerSize,
                                     child: LayoutBuilder(
                                       builder: (context, constraints) {
                                         return MouseRegion(
@@ -191,260 +214,253 @@ class _ClockPageState extends State<ClockPage>
                                       },
                                     ),
                                   ),
-                                ),
-                                Positioned(
-                                  left: 0,
-                                  bottom: 0,
-                                  child: _buildClockScaleControls(context),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 206,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          _localized(
-                                            '时间旋流',
-                                            'Time Flow',
-                                            '時間の流転',
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          PopupMenuButton<DisplayLanguage>(
-                                            padding: const EdgeInsets.all(6),
-                                            iconSize: 22,
-                                            constraints: const BoxConstraints(
-                                              minWidth: 176,
-                                            ),
-                                            tooltip: _localized(
-                                              '切换语言',
-                                              'Change language',
-                                              '言語を切り替え',
-                                            ),
-                                            icon: const Icon(Icons.language),
-                                            onSelected: (language) {
-                                              setState(
-                                                () => _language = language,
-                                              );
-                                              widget.onLanguageChanged(
-                                                language,
-                                              );
-                                            },
-                                            itemBuilder: (context) => [
-                                              CheckedPopupMenuItem(
-                                                value: DisplayLanguage.chinese,
-                                                checked:
-                                                    _language ==
-                                                    DisplayLanguage.chinese,
-                                                child: const Text('简体中文'),
-                                              ),
-                                              CheckedPopupMenuItem(
-                                                value: DisplayLanguage
-                                                    .traditionalChinese,
-                                                checked:
-                                                    _language ==
-                                                    DisplayLanguage
-                                                        .traditionalChinese,
-                                                child: const Text('繁體中文'),
-                                              ),
-                                              CheckedPopupMenuItem(
-                                                value: DisplayLanguage.english,
-                                                checked:
-                                                    _language ==
-                                                    DisplayLanguage.english,
-                                                child: const Text('English'),
-                                              ),
-                                              CheckedPopupMenuItem(
-                                                value: DisplayLanguage.japanese,
-                                                checked:
-                                                    _language ==
-                                                    DisplayLanguage.japanese,
-                                                child: const Text('日本語'),
-                                              ),
-                                            ],
-                                          ),
-                                          PopupMenuButton<AppThemeOption>(
-                                            padding: const EdgeInsets.all(6),
-                                            iconSize: 22,
-                                            tooltip: _localized(
-                                              '选择主题',
-                                              'Choose theme',
-                                              'テーマを選択',
-                                              traditionalChinese: '選擇主題',
-                                            ),
-                                            icon: const Icon(
-                                              Icons.palette_outlined,
-                                            ),
-                                            onSelected:
-                                                widget.onThemeOptionChanged,
-                                            itemBuilder: (context) => AppThemeOption
-                                                .values
-                                                .map(
-                                                  (themeOption) =>
-                                                      CheckedPopupMenuItem<
-                                                        AppThemeOption
-                                                      >(
-                                                        value: themeOption,
-                                                        checked:
-                                                            widget
-                                                                .themeOption ==
-                                                            themeOption,
-                                                        child: Row(
-                                                          children: [
-                                                            Container(
-                                                              width: 12,
-                                                              height: 12,
-                                                              decoration: BoxDecoration(
-                                                                color: themeOption
-                                                                    .preset
-                                                                    .seedColor,
-                                                                shape: BoxShape
-                                                                    .circle,
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                              width: 8,
-                                                            ),
-                                                            Text(
-                                                              _themeOptionLabel(
-                                                                themeOption,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                )
-                                                .toList(),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 18),
                                   Text(
-                                    _localized(
-                                      '元会运世',
-                                      'Yuan Hui Yun Shi',
-                                      '元会運世',
-                                    ),
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                      fontSize: 16,
+                                    _formatTime(_now),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 22,
                                       fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _localized(
-                                      '以《皇极经世》中的方式记录时间旋流，一元为129600年。\n一元含十二会，\n一会含三十运，\n一运含十二世，\n一世为三十年。\n当前日甲一元范围：\n公元前67046年~公元62553年',
-                                      'Time flows according to the Huangji Jingshi cycle. One yuan is 129,600 years.\nOne yuan contains twelve hui,\none hui contains thirty yun,\none yun contains twelve shi,\none shi contains thirty years.\nCurrent Yuan 1:\n67046 BCE - 62553 CE',
-                                      '『皇極経世』に基づき時間の流転を記録します。一元は129,600年です。\n一元は十二会、\n一会は三十運、\n一運は十二世、\n一世は三十年です。\n現在の日甲一元の範囲：\n紀元前67046年〜西暦62553年',
-                                    ),
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                      fontSize: 13,
-                                      height: 1.6,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Divider(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.outlineVariant,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Text(
-                                    _localized(
-                                      '大将守护',
-                                      'General Protection',
-                                      '大将の守護',
-                                    ),
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _localized(
-                                      '十二药叉大将源自于唐三藏法师玄奘所译《药师琉璃光如来本愿功德经》，发愿卫护饶益流布此经及受持此如来名号之一切有情众生。在旋流守护时，请持续恭敬念诵：\n南无药师琉璃光如来！\n\n也可以依次恭敬念诵十二药叉大将的名号：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
-                                      'The Twelve Yaksha Generals are described in the Bhaiṣajyaguru Vaidūryaprabharāja Sūtra translated by Xuanzang. During the rotation, respectfully recite:\nNamo Bhaiṣajyaguru Vaidūryaprabharāja Tathāgata!\n\nThe Twelve Yaksha Generals:\nKumbhira\nVajra\nMihira\nAndira\nAnila\nSandila\nIndra\nPajra\nMahoraga\nCandala\nCatura\nVikala',
-                                      '十二薬叉大将は、玄奘訳『薬師瑠璃光如来本願功徳経』に説かれます。旋流守護の間、敬意をもって念誦してください。\n南無薬師瑠璃光如来！\n\n十二薬叉大将：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
-                                    ),
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                      fontSize: 13,
-                                      height: 1.6,
+                                      color: Colors.indigo,
                                     ),
                                   ),
                                 ],
                               ),
-                              Positioned(
-                                left: 0,
-                                bottom: 0,
-                                child: Tooltip(
-                                  message: _localized(
-                                    '启动一轮旋流守护',
-                                    'Start one protection cycle',
-                                    '旋流守護を開始',
-                                  ),
-                                  child: ElevatedButton.icon(
-                                    onPressed:
-                                        _branchNumberRotationController
-                                            .isAnimating
-                                        ? null
-                                        : () => _branchNumberRotationController
-                                              .forward(from: 0),
-                                    icon: Transform(
-                                      alignment: Alignment.center,
-                                      transform: Matrix4.diagonal3Values(
-                                        -1,
-                                        1,
-                                        1,
+                            ),
+                          ),
+                        ),
+                        ),
+                        SizedBox(
+                          width: 206,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              _localized(
+                                                '时间旋流',
+                                                'Time Flow',
+                                                '時間の流転',
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.primary,
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              PopupMenuButton<DisplayLanguage>(
+                                                padding: const EdgeInsets.all(6),
+                                                iconSize: 22,
+                                                constraints: const BoxConstraints(
+                                                  minWidth: 176,
+                                                ),
+                                                tooltip: _localized(
+                                                  '切换语言',
+                                                  'Change language',
+                                                  '言語を切り替え',
+                                                ),
+                                                icon: const Icon(Icons.language),
+                                                onSelected: (language) {
+                                                  setState(
+                                                    () => _language = language,
+                                                  );
+                                                  widget.onLanguageChanged(
+                                                    language,
+                                                  );
+                                                },
+                                                itemBuilder: (context) => [
+                                                  CheckedPopupMenuItem(
+                                                    value: DisplayLanguage.chinese,
+                                                    checked:
+                                                        _language ==
+                                                        DisplayLanguage.chinese,
+                                                    child: const Text('简体中文'),
+                                                  ),
+                                                  CheckedPopupMenuItem(
+                                                    value: DisplayLanguage
+                                                        .traditionalChinese,
+                                                    checked:
+                                                        _language ==
+                                                        DisplayLanguage
+                                                            .traditionalChinese,
+                                                    child: const Text('繁體中文'),
+                                                  ),
+                                                  CheckedPopupMenuItem(
+                                                    value: DisplayLanguage.english,
+                                                    checked:
+                                                        _language ==
+                                                        DisplayLanguage.english,
+                                                    child: const Text('English'),
+                                                  ),
+                                                  CheckedPopupMenuItem(
+                                                    value: DisplayLanguage.japanese,
+                                                    checked:
+                                                        _language ==
+                                                        DisplayLanguage.japanese,
+                                                    child: const Text('日本語'),
+                                                  ),
+                                                ],
+                                              ),
+                                              PopupMenuButton<AppThemeOption>(
+                                                padding: const EdgeInsets.all(6),
+                                                iconSize: 22,
+                                                tooltip: _localized(
+                                                  '选择主题',
+                                                  'Choose theme',
+                                                  'テーマを選択',
+                                                  traditionalChinese: '選擇主題',
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.palette_outlined,
+                                                ),
+                                                onSelected:
+                                                    widget.onThemeOptionChanged,
+                                                itemBuilder: (context) => AppThemeOption
+                                                    .values
+                                                    .map(
+                                                      (themeOption) =>
+                                                          CheckedPopupMenuItem<
+                                                            AppThemeOption
+                                                          >(
+                                                            value: themeOption,
+                                                            checked:
+                                                                widget
+                                                                    .themeOption ==
+                                                                themeOption,
+                                                            child: Row(
+                                                              children: [
+                                                                Container(
+                                                                  width: 12,
+                                                                  height: 12,
+                                                                  decoration: BoxDecoration(
+                                                                    color: themeOption
+                                                                        .preset
+                                                                        .seedColor,
+                                                                    shape: BoxShape
+                                                                        .circle,
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                  width: 8,
+                                                                ),
+                                                                Text(
+                                                                  _themeOptionLabel(
+                                                                    themeOption,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                    )
+                                                    .toList(),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                      child: Icon(Icons.autorenew),
-                                    ),
-                                    label: Text(
-                                      _localized(
-                                        '旋流守护',
-                                        'Start rotation',
-                                        '旋流守護',
+                                      const SizedBox(height: 8),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'v$_appVersion',
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.outline,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(height: 20),
+                                      Text(
+                                        _localized(
+                                          '元会运世',
+                                          'Yuan Hui Yun Shi',
+                                          '元会運世',
+                                        ),
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _localized(
+                                          '以《皇极经世》中的方式记录时间旋流，一元为129600年。\n一元含十二会，\n一会含三十运，\n一运含十二世，\n一世为三十年。\n当前日甲一元范围：\n公元前67046年~公元62553年',
+                                          'Time flows according to the Huangji Jingshi cycle. One yuan is 129,600 years.\nOne yuan contains twelve hui,\none hui contains thirty yun,\none yun contains twelve shi,\none shi contains thirty years.\nCurrent Yuan 1:\n67046 BCE - 62553 CE',
+                                          '『皇極経世』に基づき時間の流転を記録します。一元は129,600年です。\n一元は十二会、\n一会は三十運、\n一運は十二世、\n一世は三十年です。\n現在の日甲一元の範囲：\n紀元前67046年〜西暦62553年',
+                                        ),
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                          fontSize: 13,
+                                          height: 1.6,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      if (_protectionExpanded)
+                                        Text(
+                                          _localized(
+                                            '大将守护',
+                                            'General Protection',
+                                            '大将の守護',
+                                          ),
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        )
+                                      else
+                                        const SizedBox.shrink(),
+                                      if (_protectionExpanded) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          _localized(
+                                            '十二药叉大将源自于唐三藏法师玄奘所译《药师琉璃光如来本愿功德经》，发愿卫护饶益流布此经及受持此如来名号之一切有情众生。在旋流守护时，请持续恭敬念诵：\n南无药师琉璃光如来！\n\n也可以依次恭敬念诵十二药叉大将的名号：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
+                                            'The Twelve Yaksha Generals are described in the Bhaiṣajyaguru Vaidūryaprabharāja Sūtra translated by Xuanzang. During the rotation, respectfully recite:\nNamo Bhaiṣajyaguru Vaidūryaprabharāja Tathāgata!\n\nThe Twelve Yaksha Generals:\nKumbhira\nVajra\nMihira\nAndira\nAnila\nSandila\nIndra\nPajra\nMahoraga\nCandala\nCatura\nVikala',
+                                            '十二薬叉大将は、玄奘訳『薬師瑠璃光如来本願功徳経』に説かれます。旋流守護の間、敬意をもって念誦してください。\n南無薬師瑠璃光如来！\n\n十二薬叉大将：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
+                                          ),
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                            fontSize: 13,
+                                            height: 1.6,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
+                                ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: _buildUnifiedLeftToolbar(context),
                                 ),
                               ),
                             ],
@@ -452,6 +468,7 @@ class _ClockPageState extends State<ClockPage>
                         ),
                       ],
                     ),
+                ),
                   ),
                 ),
               ),
@@ -524,69 +541,187 @@ class _ClockPageState extends State<ClockPage>
     );
   }
 
-  Widget _buildClockScaleControls(BuildContext context) {
-    return Material(
-      color: Theme.of(
-        context,
-      ).colorScheme.surfaceContainer.withValues(alpha: 0.9),
-      elevation: 3,
-      borderRadius: BorderRadius.circular(6),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Tooltip(
-            message: _localized('放大大盘', 'Zoom in', '大盤を拡大'),
+  Widget _buildUnifiedLeftToolbar(BuildContext context) {
+    final toolbarSurface = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(10),
+    );
+
+    Widget buildActionButton(
+      Widget icon,
+      String tooltipMessage,
+      VoidCallback? onPressed, {
+      Key? key,
+      Color? backgroundColor,
+      Color? foregroundColor,
+    }) {
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Tooltip(
+            message: tooltipMessage,
             child: IconButton(
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              padding: const EdgeInsets.all(6),
-              iconSize: 20,
-              icon: const Icon(Icons.add),
-              onPressed: _clockScale >= 1.8
-                  ? null
-                  : () => _changeClockScale(0.1),
+              key: key,
+              tooltip: tooltipMessage,
+              onPressed: onPressed,
+              style: IconButton.styleFrom(
+                backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
+                foregroundColor: foregroundColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
+                minimumSize: const Size(0, 28),
+                padding: const EdgeInsets.all(4),
+                shape: buttonShape,
+              ),
+              icon: icon,
             ),
           ),
-          const Divider(height: 1),
-          Tooltip(
-            message: _localized('缩小大盘', 'Zoom out', '大盤を縮小'),
-            child: IconButton(
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              padding: const EdgeInsets.all(6),
-              iconSize: 20,
-              icon: const Icon(Icons.remove),
-              onPressed: _clockScale <= 0.7
-                  ? null
-                  : () => _changeClockScale(-0.1),
-            ),
-          ),
-          const Divider(height: 1),
-          PopupMenuButton<ClockDialRing>(
-            padding: const EdgeInsets.all(6),
-            iconSize: 20,
-            tooltip: _localized('显示或隐藏圈层', 'Show or hide layers', '環を表示または非表示'),
-            icon: const Icon(Icons.layers_outlined),
-            onSelected: _toggleClockRing,
-            itemBuilder: (context) => ClockDialRing.values
-                .map(
-                  (ring) => CheckedPopupMenuItem<ClockDialRing>(
-                    value: ring,
-                    checked: _visibleClockRings.contains(ring),
-                    child: Text(_clockLayerLabel(ring)),
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: 206,
+      child: Material(
+        color: toolbarSurface,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  buildActionButton(
+                    Icon(
+                      _leftDialColumnCollapsed
+                          ? Icons.keyboard_double_arrow_right
+                          : Icons.keyboard_double_arrow_left,
+                      size: 16,
+                    ),
+                    _leftDialColumnCollapsed
+                        ? _localized('展开左列', 'Expand left column', '左列を展開')
+                        : _localized('收起左列', 'Collapse left column', '左列を折りたたむ'),
+                    () => setState(() {
+                      _leftDialColumnCollapsed = !_leftDialColumnCollapsed;
+                    }),
+                    key: const ValueKey('toggle_left_panel_button'),
                   ),
-                )
-                .toList(),
+                  buildActionButton(
+                    Icon(
+                      _protectionExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                      size: 16,
+                    ),
+                    _protectionExpanded
+                        ? _localized('收起大将守护', 'Collapse General Protection', '大将の守護を折りたたむ')
+                        : _localized('展开大将守护', 'Expand General Protection', '大将の守護を展開'),
+                    () => setState(() {
+                      _protectionExpanded = !_protectionExpanded;
+                    }),
+                  ),
+                  buildActionButton(
+                    Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.diagonal3Values(-1, 1, 1),
+                      child: const Icon(Icons.autorenew, size: 16),
+                    ),
+                    _localized(
+                      '启动一轮旋流守护',
+                      'Start one protection cycle',
+                      '旋流守護を開始',
+                    ),
+                    _branchNumberRotationController.isAnimating
+                        ? null
+                        : () => _branchNumberRotationController.forward(from: 0),
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              _buildClockScaleControls(context),
+            ],
           ),
-          Tooltip(
-            message: _localized('显示全部圈层', 'Show all layers', 'すべての環を表示'),
-            child: IconButton(
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              padding: const EdgeInsets.all(6),
-              iconSize: 20,
-              icon: const Icon(Icons.visibility),
-              onPressed: _restoreAllClockRings,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClockScaleControls(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainer.withValues(alpha: 0.9),
+        elevation: 1,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+          child: SizedBox(
+            height: 52,
+            child: GridView.count(
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              childAspectRatio: 4.0,
+              crossAxisSpacing: 2,
+              mainAxisSpacing: 2,
+              children: [
+              Tooltip(
+                message: _localized('放大大盘', 'Zoom in', '大盤を拡大'),
+                child: IconButton(
+                  constraints: const BoxConstraints(minHeight: 24),
+                  padding: EdgeInsets.zero,
+                  iconSize: 14,
+                  icon: const Icon(Icons.add),
+                  onPressed: _clockScale >= 1.8
+                      ? null
+                      : () => _changeClockScale(0.1),
+                ),
+              ),
+              Tooltip(
+                message: _localized('缩小大盘', 'Zoom out', '大盤を縮小'),
+                child: IconButton(
+                  constraints: const BoxConstraints(minHeight: 24),
+                  padding: EdgeInsets.zero,
+                  iconSize: 14,
+                  icon: const Icon(Icons.remove),
+                  onPressed: _clockScale <= 0.7
+                      ? null
+                      : () => _changeClockScale(-0.1),
+                ),
+              ),
+              Tooltip(
+                message: _localized('显示或隐藏圈层', 'Show or hide layers', '環を表示または非表示'),
+                child: PopupMenuButton<ClockDialRing>(
+                  padding: EdgeInsets.zero,
+                  iconSize: 14,
+                  constraints: const BoxConstraints(minHeight: 24),
+                  tooltip: _localized('显示或隐藏圈层', 'Show or hide layers', '環を表示または非表示'),
+                  icon: const Icon(Icons.layers_outlined),
+                  onSelected: _toggleClockRing,
+                  itemBuilder: (context) => ClockDialRing.values
+                      .map(
+                        (ring) => CheckedPopupMenuItem<ClockDialRing>(
+                          value: ring,
+                          checked: _visibleClockRings.contains(ring),
+                          child: Text(_clockLayerLabel(ring)),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+              Tooltip(
+                message: _localized('显示全部圈层', 'Show all layers', 'すべての環を表示'),
+                child: IconButton(
+                  constraints: const BoxConstraints(minHeight: 24),
+                  padding: EdgeInsets.zero,
+                  iconSize: 14,
+                  icon: const Icon(Icons.visibility),
+                  onPressed: _restoreAllClockRings,
+                ),
+              ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
