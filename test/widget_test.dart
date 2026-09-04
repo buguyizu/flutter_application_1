@@ -1,30 +1,44 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_application_1/main.dart.txt';
+import 'package:flutter_application_1/app.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('shows app version', (tester) async {
+    await tester.pumpWidget(const ClockApp());
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.textContaining('1.0.1'), findsOneWidget);
+  });
+
+  testWidgets('can collapse the left dial column', (tester) async {
+    await tester.pumpWidget(const ClockApp());
+    await tester.pump();
+
+    final leftPanel = find.byKey(const ValueKey('left_panel_container'));
+    expect(leftPanel, findsOneWidget);
+
+    final initialWidth = tester.getSize(leftPanel).width;
+    expect(initialWidth, greaterThan(100));
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('toggle_left_panel_button')),
+    );
+    await tester.tap(find.byKey(const ValueKey('toggle_left_panel_button')));
+    await tester.pumpAndSettle();
+
+    final collapsedWidth = tester.getSize(leftPanel).width;
+    expect(collapsedWidth, equals(initialWidth));
+  });
+
+  testWidgets('shows the dial controls and four small dials', (tester) async {
+    await tester.pumpWidget(const ClockApp());
+    await tester.pump();
+
+    expect(find.byIcon(Icons.add), findsOneWidget);
+    expect(find.byIcon(Icons.remove), findsOneWidget);
+    expect(find.byIcon(Icons.layers_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.visibility), findsOneWidget);
+    expect(find.byType(CustomPaint), findsAtLeast(4));
   });
 }
