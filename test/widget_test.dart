@@ -41,4 +41,32 @@ void main() {
     expect(find.byIcon(Icons.visibility), findsOneWidget);
     expect(find.byType(CustomPaint), findsAtLeast(4));
   });
+
+  testWidgets('supports zoom, layer menu, and protection toggle', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ClockApp());
+    await tester.pump();
+
+    Future<void> tapIcon(IconData icon) async {
+      final finder = find.byIcon(icon);
+      await tester.ensureVisible(finder);
+      await tester.tap(finder);
+      await tester.pump();
+    }
+
+    await tapIcon(Icons.add);
+    await tapIcon(Icons.remove);
+
+    expect(find.byIcon(Icons.layers_outlined), findsOneWidget);
+
+    final protectionButton = find.byKey(
+      const ValueKey('toggle_protection_button'),
+    );
+    await tester.ensureVisible(protectionButton);
+    await tester.tap(protectionButton);
+    await tester.pump();
+    expect(find.byIcon(Icons.expand_less), findsOneWidget);
+    await tester.tap(protectionButton);
+  });
 }

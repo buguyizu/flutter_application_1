@@ -653,6 +653,7 @@ class _ClockPageState extends State<ClockPage>
           () => setState(() {
             _protectionExpanded = !_protectionExpanded;
           }),
+          key: const ValueKey('toggle_protection_button'),
         ),
         _buildClockLayerButton(context),
         buildActionButton(
