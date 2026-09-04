@@ -39,6 +39,9 @@ class _ClockPageState extends State<ClockPage>
   late DateTime _now;
   Timer? _timer;
   int? _hoveredYearIndex;
+  int? _hoveredBranchIndex;
+  int? _hoveredYunIndex;
+  int? _hoveredShiIndex;
   ClockDialRing? _hoveredClockRing;
   Offset? _clockTooltipPosition;
   double _clockScale = 1.3;
@@ -232,10 +235,12 @@ class _ClockPageState extends State<ClockPage>
                         ),
                         SizedBox(
                           width: 206,
+                          height: leftDialColumnHeight,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SingleChildScrollView(
+                              Expanded(
+                                child: SingleChildScrollView(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -456,6 +461,7 @@ class _ClockPageState extends State<ClockPage>
                                     ],
                                   ),
                                 ),
+                              ),
                               Padding(
                                 padding: const EdgeInsets.only(top: 12),
                                 child: Align(
@@ -555,9 +561,11 @@ class _ClockPageState extends State<ClockPage>
       Color? backgroundColor,
       Color? foregroundColor,
     }) {
-      return Expanded(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
+      return Align(
+        alignment: Alignment.center,
+        child: SizedBox(
+          width: 44,
+          height: 44,
           child: Tooltip(
             message: tooltipMessage,
             child: IconButton(
@@ -567,7 +575,7 @@ class _ClockPageState extends State<ClockPage>
               style: IconButton.styleFrom(
                 backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
                 foregroundColor: foregroundColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
-                minimumSize: const Size(0, 28),
+                fixedSize: const Size.square(44),
                 padding: const EdgeInsets.all(4),
                 shape: buttonShape,
               ),
@@ -579,22 +587,38 @@ class _ClockPageState extends State<ClockPage>
     }
 
     return SizedBox(
-      width: 206,
+      width: 98,
       child: Material(
         color: toolbarSurface,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(4),
-          child: Column(
-            children: [
-              Row(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: SizedBox(
+              width: 90,
+              height: 182,
+              child: GridView.count(
+                crossAxisCount: 2,
+                physics: const NeverScrollableScrollPhysics(),
+                childAspectRatio: 1,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
                 children: [
+                  _buildClockScaleButton(
+                    context,
+                    icon: Icons.add,
+                    tooltip: _localized('放大大盘', 'Zoom in', '大盤を拡大'),
+                    onPressed: _clockScale >= 1.8
+                        ? null
+                        : () => _changeClockScale(0.1),
+                  ),
                   buildActionButton(
                     Icon(
                       _leftDialColumnCollapsed
-                          ? Icons.keyboard_double_arrow_right
-                          : Icons.keyboard_double_arrow_left,
-                      size: 16,
+                          ? Icons.chevron_right
+                          : Icons.chevron_left,
+                      size: 20,
                     ),
                     _leftDialColumnCollapsed
                         ? _localized('展开左列', 'Expand left column', '左列を展開')
@@ -604,10 +628,20 @@ class _ClockPageState extends State<ClockPage>
                     }),
                     key: const ValueKey('toggle_left_panel_button'),
                   ),
+                  _buildClockScaleButton(
+                    context,
+                    icon: Icons.remove,
+                    tooltip: _localized('缩小大盘', 'Zoom out', '大盤を縮小'),
+                    onPressed: _clockScale <= 0.7
+                        ? null
+                        : () => _changeClockScale(-0.1),
+                  ),
                   buildActionButton(
                     Icon(
-                      _protectionExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
-                      size: 16,
+                      _protectionExpanded
+                          ? Icons.expand_less
+                          : Icons.expand_more,
+                      size: 20,
                     ),
                     _protectionExpanded
                         ? _localized('收起大将守护', 'Collapse General Protection', '大将の守護を折りたたむ')
@@ -616,11 +650,12 @@ class _ClockPageState extends State<ClockPage>
                       _protectionExpanded = !_protectionExpanded;
                     }),
                   ),
+                  _buildClockLayerButton(context),
                   buildActionButton(
                     Transform(
                       alignment: Alignment.center,
                       transform: Matrix4.diagonal3Values(-1, 1, 1),
-                      child: const Icon(Icons.autorenew, size: 16),
+                      child: const Icon(Icons.autorenew, size: 20),
                     ),
                     _localized(
                       '启动一轮旋流守护',
@@ -633,11 +668,88 @@ class _ClockPageState extends State<ClockPage>
                     backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                     foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
+                  _buildClockScaleButton(
+                    context,
+                    icon: Icons.visibility,
+                    tooltip: _localized('显示全部圈层', 'Show all layers', 'すべての環を表示'),
+                    onPressed: _restoreAllClockRings,
+                  ),
+                  const SizedBox.shrink(),
                 ],
               ),
-              const SizedBox(height: 4),
-              _buildClockScaleControls(context),
-            ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClockScaleButton(
+    BuildContext context, {
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Align(
+        alignment: Alignment.center,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: IconButton(
+            tooltip: tooltip,
+            style: IconButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+              fixedSize: const Size.square(44),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            padding: EdgeInsets.zero,
+            iconSize: 20,
+            icon: Icon(icon),
+            onPressed: onPressed,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClockLayerButton(BuildContext context) {
+    final tooltip = _localized(
+      '显示或隐藏圈层',
+      'Show or hide layers',
+      '環を表示または非表示',
+    );
+    return Tooltip(
+      message: tooltip,
+      child: Align(
+        alignment: Alignment.center,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Material(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(10),
+            child: PopupMenuButton<ClockDialRing>(
+              padding: EdgeInsets.zero,
+              iconSize: 20,
+              constraints: const BoxConstraints(minHeight: 40),
+              tooltip: tooltip,
+              icon: const Icon(Icons.layers_outlined),
+              onSelected: _toggleClockRing,
+              itemBuilder: (context) => ClockDialRing.values
+                  .map(
+                    (ring) => CheckedPopupMenuItem<ClockDialRing>(
+                      value: ring,
+                      checked: _visibleClockRings.contains(ring),
+                      child: Text(_clockLayerLabel(ring)),
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
         ),
       ),
@@ -656,20 +768,20 @@ class _ClockPageState extends State<ClockPage>
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
           child: SizedBox(
-            height: 52,
+            height: 92,
             child: GridView.count(
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2,
-              childAspectRatio: 4.0,
+              childAspectRatio: 2.2,
               crossAxisSpacing: 2,
               mainAxisSpacing: 2,
               children: [
               Tooltip(
                 message: _localized('放大大盘', 'Zoom in', '大盤を拡大'),
                 child: IconButton(
-                  constraints: const BoxConstraints(minHeight: 24),
+                  constraints: const BoxConstraints(minHeight: 40),
                   padding: EdgeInsets.zero,
-                  iconSize: 14,
+                  iconSize: 20,
                   icon: const Icon(Icons.add),
                   onPressed: _clockScale >= 1.8
                       ? null
@@ -679,9 +791,9 @@ class _ClockPageState extends State<ClockPage>
               Tooltip(
                 message: _localized('缩小大盘', 'Zoom out', '大盤を縮小'),
                 child: IconButton(
-                  constraints: const BoxConstraints(minHeight: 24),
+                  constraints: const BoxConstraints(minHeight: 40),
                   padding: EdgeInsets.zero,
-                  iconSize: 14,
+                  iconSize: 20,
                   icon: const Icon(Icons.remove),
                   onPressed: _clockScale <= 0.7
                       ? null
@@ -692,8 +804,8 @@ class _ClockPageState extends State<ClockPage>
                 message: _localized('显示或隐藏圈层', 'Show or hide layers', '環を表示または非表示'),
                 child: PopupMenuButton<ClockDialRing>(
                   padding: EdgeInsets.zero,
-                  iconSize: 14,
-                  constraints: const BoxConstraints(minHeight: 24),
+                  iconSize: 20,
+                  constraints: const BoxConstraints(minHeight: 40),
                   tooltip: _localized('显示或隐藏圈层', 'Show or hide layers', '環を表示または非表示'),
                   icon: const Icon(Icons.layers_outlined),
                   onSelected: _toggleClockRing,
@@ -711,9 +823,9 @@ class _ClockPageState extends State<ClockPage>
               Tooltip(
                 message: _localized('显示全部圈层', 'Show all layers', 'すべての環を表示'),
                 child: IconButton(
-                  constraints: const BoxConstraints(minHeight: 24),
+                  constraints: const BoxConstraints(minHeight: 40),
                   padding: EdgeInsets.zero,
-                  iconSize: 14,
+                  iconSize: 20,
                   icon: const Icon(Icons.visibility),
                   onPressed: _restoreAllClockRings,
                 ),
@@ -855,10 +967,14 @@ class _ClockPageState extends State<ClockPage>
 
   String _huiLabel(DateTime time) {
     final number = _huangjiHuiNumber(time);
+    return _huiLabelForNumber(number);
+  }
+
+  String _huiLabelForNumber(int number) {
     return _localized(
-      '月${_earthlyBranch(_huangjiHuiIndex(time))}$number会',
+      '月${_earthlyBranch(number - 1)}$number会',
       'Hui $number',
-      '月${_earthlyBranch(_huangjiHuiIndex(time))}$number会',
+      '月${_earthlyBranch(number - 1)}$number会',
     );
   }
 
@@ -896,9 +1012,17 @@ class _ClockPageState extends State<ClockPage>
     return SizedBox(
       width: 176,
       height: 210,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
+      child: MouseRegion(
+        onExit: (_) => setState(() => _hoveredBranchIndex = null),
+        onHover: (event) {
+          final index = _dialIndexAt(event.localPosition, 12);
+          if (index != _hoveredBranchIndex) {
+            setState(() => _hoveredBranchIndex = index);
+          }
+        },
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
           SizedBox(
             width: 176,
             height: 176,
@@ -908,6 +1032,13 @@ class _ClockPageState extends State<ClockPage>
                 huiIndex,
                 subtitle: huiLabel,
                 language: _language,
+                hoveredIndex: _hoveredBranchIndex,
+                hoverLabel: _hoveredBranchIndex == null
+                    ? null
+                  : _huiLabelForNumber(
+                    _huangjiHuiNumber(time) +
+                      (_hoveredBranchIndex! - huiIndex),
+                    ),
               ),
             ),
           ),
@@ -935,7 +1066,8 @@ class _ClockPageState extends State<ClockPage>
               textAlign: TextAlign.center,
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -945,12 +1077,23 @@ class _ClockPageState extends State<ClockPage>
     final huiLabel = _huiLabel(time);
     final firstYunNumber = _huangjiYunNumber(time) - currentIndex;
     final yunLabel = _yunLabel(time.year);
+    final hoverLabel = _hoveredYunIndex == null
+      ? null
+      : _yunLabelForNumber(firstYunNumber + _hoveredYunIndex!);
     return SizedBox(
       width: 176,
       height: 210,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
+      child: MouseRegion(
+        onExit: (_) => setState(() => _hoveredYunIndex = null),
+        onHover: (event) {
+          final index = _dialIndexAt(event.localPosition, 30);
+          if (index != _hoveredYunIndex) {
+            setState(() => _hoveredYunIndex = index);
+          }
+        },
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
           SizedBox(
             width: 176,
             height: 176,
@@ -964,6 +1107,8 @@ class _ClockPageState extends State<ClockPage>
                 ),
                 labelIndices: List<int>.generate(30, (index) => index),
                 startAtBottom: true,
+                hoveredIndex: _hoveredYunIndex,
+                  hoverLabel: hoverLabel,
                 currentLabel: yunLabel,
               ),
             ),
@@ -992,19 +1137,35 @@ class _ClockPageState extends State<ClockPage>
               textAlign: TextAlign.center,
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
+    String _yunLabelForNumber(int number) {
+      return _localized(
+        '星${_heavenlyStem(number - 1)}$number运',
+        'Yun $number',
+        '星${_heavenlyStem(number - 1)}$number運',
+      );
+    }
   Widget _buildTwelveSegmentDial(int currentIndex, int year) {
     final startYear = _yearCycleStart(year);
     return SizedBox(
       width: 176,
       height: 210,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
+      child: MouseRegion(
+        onExit: (_) => setState(() => _hoveredShiIndex = null),
+        onHover: (event) {
+          final index = _dialIndexAt(event.localPosition, 12);
+          if (index != _hoveredShiIndex) {
+            setState(() => _hoveredShiIndex = index);
+          }
+        },
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
           SizedBox(
             width: 176,
             height: 176,
@@ -1015,6 +1176,14 @@ class _ClockPageState extends State<ClockPage>
                 language: _language,
                 title: _yunLabel(year),
                 subtitle: _shiLabel(year),
+                hoveredIndex: _hoveredShiIndex,
+                hoverLabel: _hoveredShiIndex == null
+                    ? null
+                  : _shiLabel(
+                    year +
+                      (_hoveredShiIndex! - currentIndex) *
+                        _yearsPerShi,
+                    ),
               ),
             ),
           ),
@@ -1042,7 +1211,8 @@ class _ClockPageState extends State<ClockPage>
               textAlign: TextAlign.center,
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1113,6 +1283,20 @@ class _ClockPageState extends State<ClockPage>
         ),
       ),
     );
+  }
+
+  int? _dialIndexAt(Offset position, int segmentCount) {
+    final center = const Offset(88, 122);
+    final delta = position - center;
+    if (delta.distance > 88) {
+      return null;
+    }
+    final step = 2 * pi / segmentCount;
+    final startAngle = pi / 2 - step / 2;
+    final angle = atan2(delta.dy, delta.dx);
+    var relativeAngle = (angle - startAngle) % (2 * pi);
+    if (relativeAngle < 0) relativeAngle += 2 * pi;
+    return (relativeAngle / step).floor().clamp(0, segmentCount - 1);
   }
 
   int? _yearIndexAt(Offset position) {

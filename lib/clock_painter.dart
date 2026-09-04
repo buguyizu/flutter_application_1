@@ -347,7 +347,7 @@ class ClockPainter extends CustomPainter {
     // 绘制层级 (从下到上)
 
     // 背景与外框 (基于 hourRadius)
-    _drawDial(canvas, center, hourRadius);
+    _drawDial(canvas, center, hourRadius * 0.97);
     if (isBranchNumbersRotating &&
         _isVisible(ClockDialRing.branchNumbers) &&
         _isVisible(ClockDialRing.branches)) {
@@ -1040,12 +1040,13 @@ class ClockPainter extends CustomPainter {
 
     // 24小时刻度
     if (_isVisible(ClockDialRing.hours)) {
+      final hourOutlineRadius = radius * 0.97;
       for (int i = 0; i < 24; i++) {
         final angle = _degToRad(i * 15 + 180);
 
-        // 贴合外层表盘：从最外圈向内延伸
-        final start = _pointOnCircle(center, radius, angle);
-        final end = _pointOnCircle(center, radius - 10, angle);
+        // 刻度外端与 24 小时圈的细黑实线完全重合。
+        final start = _pointOnCircle(center, hourOutlineRadius, angle);
+        final end = _pointOnCircle(center, hourOutlineRadius - 6, angle);
         canvas.drawLine(start, end, hourPaint);
       }
     }

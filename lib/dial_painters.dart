@@ -10,12 +10,16 @@ class BranchPlaceholderPainter extends CustomPainter {
     this.currentIndex, {
     this.subtitle,
     this.language = DisplayLanguage.chinese,
+    this.hoveredIndex,
+    this.hoverLabel,
   });
 
   final String title;
   final int currentIndex;
   final String? subtitle;
   final DisplayLanguage language;
+  final int? hoveredIndex;
+  final String? hoverLabel;
   static const List<String> branches = <String>[
     '子',
     '丑',
@@ -80,6 +84,19 @@ class BranchPlaceholderPainter extends CustomPainter {
         ..strokeCap = StrokeCap.butt
         ..color = const Color(0xFFBDE3F8),
     );
+    if (hoveredIndex != null && hoveredIndex! >= 0 && hoveredIndex! < 12) {
+      canvas.drawArc(
+        ringRect,
+        startAngle + hoveredIndex! * step,
+        step,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = ringWidth
+          ..strokeCap = StrokeCap.butt
+          ..color = const Color(0xFFFFD166).withValues(alpha: 0.72),
+      );
+    }
     canvas.drawCircle(
       center,
       ringRadius - ringWidth / 2,
@@ -165,7 +182,7 @@ class BranchPlaceholderPainter extends CustomPainter {
     if (subtitle != null) {
       final subtitlePainter = TextPainter(
         text: TextSpan(
-          text: subtitle,
+          text: hoverLabel ?? subtitle,
           style: const TextStyle(
             color: Color(0xFF37474F),
             fontSize: 13,
@@ -190,7 +207,9 @@ class BranchPlaceholderPainter extends CustomPainter {
     return oldDelegate.currentIndex != currentIndex ||
         oldDelegate.title != title ||
         oldDelegate.subtitle != subtitle ||
-        oldDelegate.language != language;
+        oldDelegate.language != language ||
+        oldDelegate.hoveredIndex != hoveredIndex ||
+        oldDelegate.hoverLabel != hoverLabel;
   }
 }
 
@@ -411,6 +430,8 @@ class TwelveSegmentDialPainter extends CustomPainter {
     this.language = DisplayLanguage.chinese,
     this.title = '星乙192运',
     this.subtitle = '辰戌2303世',
+    this.hoveredIndex,
+    this.hoverLabel,
   });
 
   final int currentIndex;
@@ -418,6 +439,8 @@ class TwelveSegmentDialPainter extends CustomPainter {
   final DisplayLanguage language;
   final String title;
   final String subtitle;
+  final int? hoveredIndex;
+  final String? hoverLabel;
   static const branches = <String>[
     '子',
     '丑',
@@ -477,6 +500,19 @@ class TwelveSegmentDialPainter extends CustomPainter {
         ..strokeCap = StrokeCap.butt
         ..color = const Color(0xFFBDE3F8),
     );
+    if (hoveredIndex != null && hoveredIndex! >= 0 && hoveredIndex! < 12) {
+      canvas.drawArc(
+        ringRect,
+        startAngle + hoveredIndex! * step,
+        step,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = ringWidth
+          ..strokeCap = StrokeCap.butt
+          ..color = const Color(0xFFFFD166).withValues(alpha: 0.72),
+      );
+    }
 
     canvas.drawCircle(
       center,
@@ -570,7 +606,7 @@ class TwelveSegmentDialPainter extends CustomPainter {
     )..layout();
     final subtitlePainter = TextPainter(
       text: TextSpan(
-        text: subtitle,
+        text: hoverLabel ?? subtitle,
         style: const TextStyle(
           color: Color(0xFF37474F),
           fontSize: 13,
@@ -601,6 +637,8 @@ class TwelveSegmentDialPainter extends CustomPainter {
         oldDelegate.startYear != startYear ||
         oldDelegate.language != language ||
         oldDelegate.title != title ||
-        oldDelegate.subtitle != subtitle;
+        oldDelegate.subtitle != subtitle ||
+        oldDelegate.hoveredIndex != hoveredIndex ||
+        oldDelegate.hoverLabel != hoverLabel;
   }
 }
