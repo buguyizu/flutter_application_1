@@ -1,4 +1,4 @@
-part of 'clock_painter.dart';
+part of '../clock_painter.dart';
 
 extension ClockPainterInnerRings on ClockPainter {
   void _drawEarthBranches(Canvas canvas, Offset center, double radius) {

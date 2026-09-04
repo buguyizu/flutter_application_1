@@ -3,14 +3,14 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import 'clock_models.dart';
+import 'models/clock_models.dart';
 import 'clock_painter.dart';
-import 'clock_toolbar.dart';
-import 'dial_geometry.dart';
+import 'widgets/clock_toolbar.dart';
+import 'widgets/dial_geometry.dart';
 import 'dial_painters.dart';
-import 'small_dial_column.dart';
+import 'widgets/small_dial_column.dart';
 
-part 'small_dial_widgets.dart';
+part 'widgets/small_dial_widgets.dart';
 
 class ClockPage extends StatefulWidget {
   const ClockPage({

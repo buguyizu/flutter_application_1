@@ -2,21 +2,21 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import 'clock_models.dart';
-import 'clock_painter_labels.dart';
+import 'models/clock_models.dart';
+import 'painter_parts/clock_painter_labels.dart';
 
-part 'clock_hands.dart';
-part 'clock_minute_ring.dart';
-part 'clock_month_ring.dart';
-part 'clock_day_ring.dart';
-part 'clock_effects.dart';
-part 'clock_featured_effects.dart';
-part 'clock_base_dial.dart';
-part 'clock_inner_rings.dart';
-part 'clock_ring_numbers.dart';
-part 'clock_seconds_ring.dart';
-part 'clock_ticks.dart';
-part 'clock_week_ring.dart';
+part 'painter_parts/clock_hands.dart';
+part 'painter_parts/clock_minute_ring.dart';
+part 'painter_parts/clock_month_ring.dart';
+part 'painter_parts/clock_day_ring.dart';
+part 'painter_parts/clock_effects.dart';
+part 'painter_parts/clock_featured_effects.dart';
+part 'painter_parts/clock_base_dial.dart';
+part 'painter_parts/clock_inner_rings.dart';
+part 'painter_parts/clock_ring_numbers.dart';
+part 'painter_parts/clock_seconds_ring.dart';
+part 'painter_parts/clock_ticks.dart';
+part 'painter_parts/clock_week_ring.dart';
 
 class ClockPainter extends CustomPainter {
   final DateTime now;

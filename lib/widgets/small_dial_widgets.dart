@@ -1,4 +1,4 @@
-part of 'clock_page.dart';
+part of '../clock_page.dart';
 
 // Extension methods share the page State because the hover state stays in ClockPage.
 // ignore_for_file: invalid_use_of_protected_member

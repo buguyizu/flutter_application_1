@@ -1,4 +1,4 @@
-part of 'clock_painter.dart';
+part of '../clock_painter.dart';
 
 extension ClockPainterTicks on ClockPainter {
   void _drawTicks(Canvas canvas, Offset center, double radius) {

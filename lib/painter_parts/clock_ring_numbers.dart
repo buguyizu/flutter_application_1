@@ -1,4 +1,4 @@
-part of 'clock_painter.dart';
+part of '../clock_painter.dart';
 
 extension ClockPainterNumbers on ClockPainter {
   void _drawNumbers(Canvas canvas, Offset center, double radius) {

@@ -1,4 +1,4 @@
-part of 'clock_painter.dart';
+part of '../clock_painter.dart';
 
 extension ClockPainterDayRing on ClockPainter {
   void _drawDaysOfYear(Canvas canvas, Offset center, double radius) {

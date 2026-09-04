@@ -1,4 +1,4 @@
-part of 'clock_painter.dart';
+part of '../clock_painter.dart';
 
 extension ClockPainterMinuteRing on ClockPainter {
   void _drawMiniteNumbers(Canvas canvas, Offset center, double radius) {

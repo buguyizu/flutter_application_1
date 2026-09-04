@@ -1,4 +1,4 @@
-part of 'clock_painter.dart';
+part of '../clock_painter.dart';
 
 extension ClockPainterWeekRing on ClockPainter {
   void _drawWeeks(Canvas canvas, Offset center, double radius) {

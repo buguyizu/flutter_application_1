@@ -1,4 +1,4 @@
-part of 'clock_painter.dart';
+part of '../clock_painter.dart';
 
 extension ClockPainterBaseDial on ClockPainter {
   void _drawDial(Canvas canvas, Offset center, double radius) {

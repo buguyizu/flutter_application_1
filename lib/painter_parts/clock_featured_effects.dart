@@ -1,4 +1,4 @@
-part of 'clock_painter.dart';
+part of '../clock_painter.dart';
 
 extension ClockPainterFeaturedEffects on ClockPainter {
   void _drawFeaturedEarthBranches(

@@ -1,4 +1,4 @@
-part of 'clock_painter.dart';
+part of '../clock_painter.dart';
 
 extension ClockPainterMonthRing on ClockPainter {
   void _drawMonths(Canvas canvas, Offset center, double radius) {

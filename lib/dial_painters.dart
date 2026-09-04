@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import 'clock_models.dart';
+import 'models/clock_models.dart';
 
 class BranchPlaceholderPainter extends CustomPainter {
   BranchPlaceholderPainter(
