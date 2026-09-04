@@ -489,7 +489,7 @@ class _ClockPageState extends State<ClockPage>
                                   padding: const EdgeInsets.only(top: 12),
                                   child: Align(
                                     alignment: Alignment.bottomRight,
-                                    child: _buildUnifiedLeftToolbar(context),
+                                    child: _buildRightToolbar(context),
                                   ),
                                 ),
                               ],
@@ -570,7 +570,7 @@ class _ClockPageState extends State<ClockPage>
     );
   }
 
-  Widget _buildUnifiedLeftToolbar(BuildContext context) {
+  Widget _buildRightToolbar(BuildContext context) {
     final buttonShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(10),
     );
