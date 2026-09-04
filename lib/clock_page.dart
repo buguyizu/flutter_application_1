@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'models/clock_models.dart';
+import 'models/clock_calculations.dart';
 import 'clock_painter.dart';
 import 'widgets/clock_toolbar.dart';
 import 'widgets/dial_geometry.dart';
@@ -34,13 +35,8 @@ class _ClockPageState extends State<ClockPage>
     with SingleTickerProviderStateMixin {
   static const String _appVersion = '1.0.1+1';
 
-  // 皇极经世纪年锚点：日甲一元、月子一会、星甲一运、辰子一世。
-  static const int _historicalEraStartYear = -67046;
   // 连续六十甲子基准：天文纪年4年为甲子年。
   static const int _sexagenaryCycleBaseYear = 4;
-  static const int _yearsPerShi = 30;
-  static const int _yearsPerYun = 12 * _yearsPerShi;
-  static const int _yearsPerHui = 30 * _yearsPerYun;
 
   late DateTime _now;
   Timer? _timer;
@@ -146,7 +142,7 @@ class _ClockPageState extends State<ClockPage>
                                           _buildThirtySegmentDial(_now),
                                           const SizedBox(height: 24),
                                           _buildTwelveSegmentDial(
-                                            _huangjiShiIndex(_now),
+                                            ClockCalculations.shiIndex(_now),
                                             _now.year,
                                           ),
                                           const SizedBox(height: 24),
@@ -879,7 +875,7 @@ class _ClockPageState extends State<ClockPage>
   }
 
   String _huiLabel(DateTime time) {
-    final number = _huangjiHuiNumber(time);
+    final number = ClockCalculations.huiNumber(time);
     return _huiLabelForNumber(number);
   }
 
@@ -892,7 +888,7 @@ class _ClockPageState extends State<ClockPage>
   }
 
   String _yunLabel(int year) {
-    final number = _huangjiYunNumberForYear(year);
+    final number = ClockCalculations.yunNumberForYear(year);
     return _localized(
       '星${_heavenlyStem(number - 1)}$number运',
       'Yun $number',
@@ -902,11 +898,11 @@ class _ClockPageState extends State<ClockPage>
 
   String _shiLabel(int year) {
     final time = DateTime(year);
-    final number = _huangjiShiNumber(time);
+    final number = ClockCalculations.shiNumber(time);
     return _localized(
-      '辰${_earthlyBranch(_huangjiShiIndex(time))}$number世',
+      '辰${_earthlyBranch(ClockCalculations.shiIndex(time))}$number世',
       'Shi $number',
-      '辰${_earthlyBranch(_huangjiShiIndex(time))}$number世',
+      '辰${_earthlyBranch(ClockCalculations.shiIndex(time))}$number世',
     );
   }
 
@@ -991,39 +987,6 @@ class _ClockPageState extends State<ClockPage>
       ClockDialRing.minutes => _localized('分钟', 'Minutes', '分'),
       ClockDialRing.seconds => _localized('秒圈', 'Seconds', '秒'),
     };
-  }
-
-  int _huangjiHuiIndex(DateTime time) {
-    return (_huangjiHuiNumber(time) - 1).remainder(12);
-  }
-
-  int _huangjiShiIndex(DateTime time) {
-    return (_huangjiShiNumber(time) - 1).remainder(12);
-  }
-
-  int _yearCycleStart(int year) {
-    return _historicalEraStartYear +
-        (year - _historicalEraStartYear) ~/ _yearsPerShi * _yearsPerShi;
-  }
-
-  int _huangjiYunIndex(DateTime time) {
-    return (_huangjiYunNumber(time) - 1).remainder(30);
-  }
-
-  int _huangjiHuiNumber(DateTime time) {
-    return (time.year - _historicalEraStartYear) ~/ _yearsPerHui + 1;
-  }
-
-  int _huangjiYunNumber(DateTime time) {
-    return _huangjiYunNumberForYear(time.year);
-  }
-
-  int _huangjiYunNumberForYear(int year) {
-    return (year - _historicalEraStartYear) ~/ _yearsPerYun + 1;
-  }
-
-  int _huangjiShiNumber(DateTime time) {
-    return (time.year - _historicalEraStartYear) ~/ _yearsPerShi + 1;
   }
 
   String _heavenlyStem(int index) {

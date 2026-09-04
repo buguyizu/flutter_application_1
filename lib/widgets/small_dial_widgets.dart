@@ -4,7 +4,7 @@ part of '../clock_page.dart';
 // ignore_for_file: invalid_use_of_protected_member
 extension _ClockPageSmallDials on _ClockPageState {
   Widget _buildYearDial(DateTime time) {
-    final startYear = _yearCycleStart(time.year);
+    final startYear = ClockCalculations.yearCycleStart(time.year);
     final yearLabels = List<String>.generate(
       30,
       (index) => '${startYear + index}',
@@ -72,7 +72,7 @@ extension _ClockPageSmallDials on _ClockPageState {
   }
 
   Widget _buildPlaceholderBranchDial(DateTime time) {
-    final huiIndex = _huangjiHuiIndex(time);
+    final huiIndex = ClockCalculations.huiIndex(time);
     final huiLabel = _huiLabel(time);
     return SizedBox(
       width: 176,
@@ -101,7 +101,7 @@ extension _ClockPageSmallDials on _ClockPageState {
                   hoverLabel: _hoveredBranchIndex == null
                       ? null
                       : _huiLabelForNumber(
-                          _huangjiHuiNumber(time) +
+                          ClockCalculations.huiNumber(time) +
                               (_hoveredBranchIndex! - huiIndex),
                         ),
                 ),
@@ -138,9 +138,9 @@ extension _ClockPageSmallDials on _ClockPageState {
   }
 
   Widget _buildThirtySegmentDial(DateTime time) {
-    final currentIndex = _huangjiYunIndex(time);
+    final currentIndex = ClockCalculations.yunIndex(time);
     final huiLabel = _huiLabel(time);
-    final firstYunNumber = _huangjiYunNumber(time) - currentIndex;
+    final firstYunNumber = ClockCalculations.yunNumber(time) - currentIndex;
     final yunLabel = _yunLabel(time.year);
     final hoverLabel = _hoveredYunIndex == null
         ? null
@@ -209,7 +209,7 @@ extension _ClockPageSmallDials on _ClockPageState {
   }
 
   Widget _buildTwelveSegmentDial(int currentIndex, int year) {
-    final startYear = _yearCycleStart(year);
+    final startYear = ClockCalculations.yearCycleStart(year);
     return SizedBox(
       width: 176,
       height: 210,
@@ -240,7 +240,7 @@ extension _ClockPageSmallDials on _ClockPageState {
                       : _shiLabel(
                           year +
                               (_hoveredShiIndex! - currentIndex) *
-                                  _ClockPageState._yearsPerShi,
+                                  ClockCalculations.yearsPerShi,
                         ),
                 ),
               ),
