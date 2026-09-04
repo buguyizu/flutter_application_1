@@ -197,7 +197,7 @@ class ClockPainter extends CustomPainter {
 
     // 5.5 分钟圈（放在心经圈以内）
     if (_isVisible(ClockDialRing.minutes)) {
-      _drawMiniteNumbers(
+      _drawMinuteNumbers(
         canvas,
         center,
         hourRadius * ClockRadiusFactors.minutes,

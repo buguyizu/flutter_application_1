@@ -1,7 +1,7 @@
 part of '../clock_painter.dart';
 
 extension ClockPainterMinuteRing on ClockPainter {
-  void _drawMiniteNumbers(Canvas canvas, Offset center, double radius) {
+  void _drawMinuteNumbers(Canvas canvas, Offset center, double radius) {
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
