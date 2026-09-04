@@ -7,6 +7,7 @@ import 'models/clock_models.dart';
 import 'models/clock_calculations.dart';
 import 'clock_painter.dart';
 import 'widgets/clock_toolbar.dart';
+import 'widgets/clock_header_actions.dart';
 import 'widgets/dial_geometry.dart';
 import 'dial_painters.dart';
 import 'widgets/small_dial_column.dart';
@@ -272,133 +273,31 @@ class _ClockPageState extends State<ClockPage>
                                                 ),
                                               ),
                                             ),
-                                            Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                PopupMenuButton<
-                                                  DisplayLanguage
-                                                >(
-                                                  padding: const EdgeInsets.all(
-                                                    6,
-                                                  ),
-                                                  iconSize: 22,
-                                                  constraints:
-                                                      const BoxConstraints(
-                                                        minWidth: 176,
-                                                      ),
-                                                  tooltip: _localized(
-                                                    '切换语言',
-                                                    'Change language',
-                                                    '言語を切り替え',
-                                                  ),
-                                                  icon: const Icon(
-                                                    Icons.language,
-                                                  ),
-                                                  onSelected: (language) {
-                                                    setState(
-                                                      () =>
-                                                          _language = language,
-                                                    );
-                                                    widget.onLanguageChanged(
-                                                      language,
-                                                    );
-                                                  },
-                                                  itemBuilder: (context) => [
-                                                    CheckedPopupMenuItem(
-                                                      value: DisplayLanguage
-                                                          .chinese,
-                                                      checked:
-                                                          _language ==
-                                                          DisplayLanguage
-                                                              .chinese,
-                                                      child: const Text('简体中文'),
-                                                    ),
-                                                    CheckedPopupMenuItem(
-                                                      value: DisplayLanguage
-                                                          .traditionalChinese,
-                                                      checked:
-                                                          _language ==
-                                                          DisplayLanguage
-                                                              .traditionalChinese,
-                                                      child: const Text('繁體中文'),
-                                                    ),
-                                                    CheckedPopupMenuItem(
-                                                      value: DisplayLanguage
-                                                          .english,
-                                                      checked:
-                                                          _language ==
-                                                          DisplayLanguage
-                                                              .english,
-                                                      child: const Text(
-                                                        'English',
-                                                      ),
-                                                    ),
-                                                    CheckedPopupMenuItem(
-                                                      value: DisplayLanguage
-                                                          .japanese,
-                                                      checked:
-                                                          _language ==
-                                                          DisplayLanguage
-                                                              .japanese,
-                                                      child: const Text('日本語'),
-                                                    ),
-                                                  ],
-                                                ),
-                                                PopupMenuButton<AppThemeOption>(
-                                                  padding: const EdgeInsets.all(
-                                                    6,
-                                                  ),
-                                                  iconSize: 22,
-                                                  tooltip: _localized(
-                                                    '选择主题',
-                                                    'Choose theme',
-                                                    'テーマを選択',
-                                                    traditionalChinese: '選擇主題',
-                                                  ),
-                                                  icon: const Icon(
-                                                    Icons.palette_outlined,
-                                                  ),
-                                                  onSelected: widget
-                                                      .onThemeOptionChanged,
-                                                  itemBuilder: (context) => AppThemeOption
-                                                      .values
-                                                      .map(
-                                                        (
-                                                          themeOption,
-                                                        ) => CheckedPopupMenuItem<AppThemeOption>(
-                                                          value: themeOption,
-                                                          checked:
-                                                              widget
-                                                                  .themeOption ==
-                                                              themeOption,
-                                                          child: Row(
-                                                            children: [
-                                                              Container(
-                                                                width: 12,
-                                                                height: 12,
-                                                                decoration: BoxDecoration(
-                                                                  color: themeOption
-                                                                      .preset
-                                                                      .seedColor,
-                                                                  shape: BoxShape
-                                                                      .circle,
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 8,
-                                                              ),
-                                                              Text(
-                                                                _themeOptionLabel(
-                                                                  themeOption,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      )
-                                                      .toList(),
-                                                ),
-                                              ],
+                                            ClockHeaderActions(
+                                              language: _language,
+                                              themeOption: widget.themeOption,
+                                              onLanguageSelected: (language) {
+                                                setState(
+                                                  () => _language = language,
+                                                );
+                                                widget.onLanguageChanged(
+                                                  language,
+                                                );
+                                              },
+                                              onThemeSelected:
+                                                  widget.onThemeOptionChanged,
+                                              languageTooltip: _localized(
+                                                '切换语言',
+                                                'Change language',
+                                                '言語を切り替え',
+                                              ),
+                                              themeTooltip: _localized(
+                                                '选择主题',
+                                                'Choose theme',
+                                                'テーマを選択',
+                                                traditionalChinese: '選擇主題',
+                                              ),
+                                              themeLabel: _themeOptionLabel,
                                             ),
                                           ],
                                         ),
