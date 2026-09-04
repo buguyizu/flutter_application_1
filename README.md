@@ -56,6 +56,46 @@ flutter run -d edge --no-web-resources-cdn
 - `R`：Hot restart
 - `q`：退出运行
 
+## 代码结构
+
+主要代码按职责分目录：
+
+```text
+lib/
+	clock_page.dart          页面状态和主布局
+	clock_painter.dart       大盘绘制主流程
+	dial_painters.dart       四个小盘的 CustomPainter
+	models/                  主题、圈层模型和时间计算
+	widgets/                 工具栏、小盘组件和命中计算
+	painter_parts/           大盘各圈层、刻度和动画绘制
+```
+
+### 调整圈层半径
+
+圈层半径比例统一在以下文件中维护：
+
+```text
+lib/models/clock_models.dart
+```
+
+主要配置类：
+
+```dart
+ClockRadiusFactors
+```
+
+调整 24 小时圈时，应同时确认数字、刻度和外侧细线的半径保持一致。
+
+### 运行检查
+
+提交代码前建议执行：
+
+```bash
+dart format lib test
+flutter analyze lib test
+flutter test
+```
+
 ## 已知限制
 
 ### Windows 桌面端
