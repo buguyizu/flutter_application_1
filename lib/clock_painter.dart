@@ -138,13 +138,13 @@ class ClockPainter extends CustomPainter {
     }
 
     // 2. 周数圈 - 位于月份圈内侧（每年52周）
-    double dayOfYearRadius = maxRadius * 0.975;
+    double dayOfYearRadius = maxRadius * ClockRadiusFactors.weeks;
     if (_isVisible(ClockDialRing.weeks)) {
       _drawWeeks(canvas, center, dayOfYearRadius);
     }
 
     // 3. 年天数圈 - 位于周数圈内侧（365/366天）
-    double weekRadius = maxRadius * 0.925;
+    double weekRadius = maxRadius * ClockRadiusFactors.days;
     if (_isVisible(ClockDialRing.days)) {
       _drawDaysOfYear(canvas, center, weekRadius);
     }

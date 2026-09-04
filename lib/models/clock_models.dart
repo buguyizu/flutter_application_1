@@ -61,6 +61,8 @@ enum ClockDialRing {
 }
 
 abstract final class ClockRadiusFactors {
+  static const weeks = 0.975;
+  static const days = 0.925;
   static const hourBase = 0.86;
   static const hourNumbers = 0.91;
   static const hourOutline = 0.97;
@@ -76,8 +78,8 @@ extension ClockDialRingMetrics on ClockDialRing {
     final hourRadius = outerRadius * ClockRadiusFactors.hourBase;
     return switch (this) {
       ClockDialRing.months => outerRadius,
-      ClockDialRing.weeks => outerRadius * 0.975 - 7,
-      ClockDialRing.days => outerRadius * 0.925,
+      ClockDialRing.weeks => outerRadius * ClockRadiusFactors.weeks - 7,
+      ClockDialRing.days => outerRadius * ClockRadiusFactors.days,
       ClockDialRing.hours => hourRadius * ClockRadiusFactors.hourNumbers,
       ClockDialRing.branchNumbers =>
         hourRadius * ClockRadiusFactors.branches + 30,
