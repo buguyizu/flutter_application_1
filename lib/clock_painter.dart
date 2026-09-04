@@ -2,118 +2,21 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-enum DisplayLanguage { chinese, traditionalChinese, english, japanese }
+import 'clock_models.dart';
+import 'clock_painter_labels.dart';
 
-enum AppThemePreset {
-  chronicleIndigo,
-  jingshiJade,
-  moonPhaseGold,
-  cinnabarRed,
-  midnightInk,
-  bambooShade,
-}
-
-enum AppThemeOption {
-  chronicleIndigoLight,
-  jingshiJadeLight,
-  moonPhaseGoldLight,
-  cinnabarRedLight,
-  midnightInkDark,
-  bambooShadeDark,
-}
-
-extension AppThemePresetData on AppThemePreset {
-  Color get seedColor => switch (this) {
-    AppThemePreset.chronicleIndigo => const Color(0xFF3949AB),
-    AppThemePreset.jingshiJade => const Color(0xFF00796B),
-    AppThemePreset.moonPhaseGold => const Color(0xFFB7791F),
-    AppThemePreset.cinnabarRed => const Color(0xFFC62828),
-    AppThemePreset.midnightInk => const Color(0xFF263238),
-    AppThemePreset.bambooShade => const Color(0xFF004D40),
-  };
-}
-
-extension AppThemeOptionData on AppThemeOption {
-  AppThemePreset get preset => switch (this) {
-    AppThemeOption.chronicleIndigoLight => AppThemePreset.chronicleIndigo,
-    AppThemeOption.jingshiJadeLight => AppThemePreset.jingshiJade,
-    AppThemeOption.moonPhaseGoldLight => AppThemePreset.moonPhaseGold,
-    AppThemeOption.cinnabarRedLight => AppThemePreset.cinnabarRed,
-    AppThemeOption.midnightInkDark => AppThemePreset.midnightInk,
-    AppThemeOption.bambooShadeDark => AppThemePreset.bambooShade,
-  };
-
-  ThemeMode get themeMode => switch (this) {
-    AppThemeOption.midnightInkDark ||
-    AppThemeOption.bambooShadeDark => ThemeMode.dark,
-    _ => ThemeMode.light,
-  };
-}
-
-enum ClockDialRing {
-  months,
-  weeks,
-  days,
-  hours,
-  branchNumbers,
-  branches,
-  meridians,
-  minutes,
-  seconds,
-}
-
-extension ClockDialRingMetrics on ClockDialRing {
-  double radiusFor(double outerRadius) {
-    final hourRadius = outerRadius * 0.86;
-    return switch (this) {
-      ClockDialRing.months => outerRadius,
-      ClockDialRing.weeks => outerRadius * 0.975 - 7,
-      ClockDialRing.days => outerRadius * 0.925,
-      ClockDialRing.hours => hourRadius * 0.91,
-      ClockDialRing.branchNumbers => hourRadius * 0.68 + 30,
-      ClockDialRing.branches => hourRadius * 0.68,
-      ClockDialRing.meridians => hourRadius * 0.56,
-      ClockDialRing.minutes => hourRadius * 0.45 + 12,
-      ClockDialRing.seconds => hourRadius * 0.15,
-    };
-  }
-
-  double get hitTolerance => switch (this) {
-    ClockDialRing.months => 10,
-    ClockDialRing.weeks => 7,
-    ClockDialRing.days => 5,
-    ClockDialRing.hours => 14,
-    ClockDialRing.branchNumbers => 12,
-    ClockDialRing.branches => 18,
-    ClockDialRing.meridians => 15,
-    ClockDialRing.minutes => 7,
-    ClockDialRing.seconds => 0,
-  };
-
-  double get hoverWidth => switch (this) {
-    ClockDialRing.months => 22,
-    ClockDialRing.weeks => 16,
-    ClockDialRing.days => 10,
-    ClockDialRing.hours => 28,
-    ClockDialRing.branchNumbers => 26,
-    ClockDialRing.branches => 38,
-    ClockDialRing.meridians => 32,
-    ClockDialRing.minutes => 12,
-    ClockDialRing.seconds => 0,
-  };
-
-  Color get hoverColor => switch (this) {
-    ClockDialRing.months => const Color(0xFFFFD1DC),
-    ClockDialRing.weeks => const Color(0xFFBDE3F8),
-    ClockDialRing.days => const Color(0xFFC8F7C5),
-    ClockDialRing.hours => const Color(0xFFBDE3F8),
-    ClockDialRing.branchNumbers => const Color(0xFFFFE09A),
-    ClockDialRing.branches => const Color(0xFFE8C7F3),
-    ClockDialRing.meridians => const Color(0xFFB8F0E1),
-    ClockDialRing.minutes => const Color(0xFFFFE0B2),
-    ClockDialRing.seconds => const Color(0xFFFFE0B2),
-  };
-}
+part 'clock_hands.dart';
+part 'clock_minute_ring.dart';
+part 'clock_month_ring.dart';
+part 'clock_day_ring.dart';
+part 'clock_effects.dart';
+part 'clock_featured_effects.dart';
+part 'clock_base_dial.dart';
+part 'clock_inner_rings.dart';
+part 'clock_ring_numbers.dart';
+part 'clock_seconds_ring.dart';
+part 'clock_ticks.dart';
+part 'clock_week_ring.dart';
 
 class ClockPainter extends CustomPainter {
   final DateTime now;
@@ -123,100 +26,15 @@ class ClockPainter extends CustomPainter {
   final ColorScheme colorScheme;
   final bool isBranchNumbersRotating;
   final double branchNumbersRotation;
-  static const List<String> _earthBranches = [
-    '子',
-    '丑',
-    '寅',
-    '卯',
-    '辰',
-    '巳',
-    '午',
-    '未',
-    '申',
-    '酉',
-    '戌',
-    '亥',
-  ];
-  static const List<String> _englishEarthBranches = [
-    'Zi',
-    'Chou',
-    'Yin',
-    'Mao',
-    'Chen',
-    'Si',
-    'Wu',
-    'Wei',
-    'Shen',
-    'You',
-    'Xu',
-    'Hai',
-  ];
-  static const List<String> _meridians = [
-    '胆经',
-    '肝经',
-    '肺经',
-    '大肠经',
-    '胃经',
-    '脾经',
-    '心经',
-    '小肠经',
-    '膀胱经',
-    '肾经',
-    '心包经',
-    '三焦经',
-  ];
-  static const List<String> _englishMeridians = [
-    'Gallbladder',
-    'Liver',
-    'Lung',
-    'Large Intestine',
-    'Stomach',
-    'Spleen',
-    'Heart',
-    'Small Intestine',
-    'Bladder',
-    'Kidney',
-    'Pericardium',
-    'Triple Burner',
-  ];
-  static const List<String> _yakshaGeneralsByDialPosition = [
-    '招杜罗',
-    '真达罗',
-    '摩虎罗',
-    '波夷罗',
-    '因达罗',
-    '珊底罗',
-    '頞你罗',
-    '安底罗',
-    '迷企罗',
-    '伐折罗',
-    '宫毗罗',
-    '毗羯罗',
-  ];
-  static const List<String> _romanizedYakshaGeneralsByDialPosition = [
-    'Catura',
-    'Candala',
-    'Mahoraga',
-    'Pajra',
-    'Indra',
-    'Sandila',
-    'Anila',
-    'Andira',
-    'Mihira',
-    'Vajra',
-    'Kumbhira',
-    'Vikala',
-  ];
-
   String _branchLabel(int index) => switch (language) {
-    DisplayLanguage.chinese => _earthBranches[index],
-    DisplayLanguage.traditionalChinese => _earthBranches[index],
-    DisplayLanguage.english => _englishEarthBranches[index],
-    DisplayLanguage.japanese => _earthBranches[index],
+    DisplayLanguage.chinese => earthBranches[index],
+    DisplayLanguage.traditionalChinese => earthBranches[index],
+    DisplayLanguage.english => englishEarthBranches[index],
+    DisplayLanguage.japanese => earthBranches[index],
   };
 
   String _meridianLabel(int index) => switch (language) {
-    DisplayLanguage.chinese => _meridians[index],
+    DisplayLanguage.chinese => meridians[index],
     DisplayLanguage.traditionalChinese => const [
       '膽經',
       '肝經',
@@ -231,8 +49,8 @@ class ClockPainter extends CustomPainter {
       '心包經',
       '三焦經',
     ][index],
-    DisplayLanguage.english => _englishMeridians[index],
-    DisplayLanguage.japanese => _meridians[index],
+    DisplayLanguage.english => englishMeridians[index],
+    DisplayLanguage.japanese => meridians[index],
   };
 
   String _monthLabel(int index) => switch (language) {
@@ -256,11 +74,11 @@ class ClockPainter extends CustomPainter {
   };
 
   String _generalLabel(int index) => switch (language) {
-    DisplayLanguage.chinese => '${_yakshaGeneralsByDialPosition[index]}大将',
+    DisplayLanguage.chinese => '${yakshaGeneralsByDialPosition[index]}大将',
     DisplayLanguage.traditionalChinese =>
-      '${_yakshaGeneralsByDialPosition[index]}大將',
-    DisplayLanguage.english => _romanizedYakshaGeneralsByDialPosition[index],
-    DisplayLanguage.japanese => '${_yakshaGeneralsByDialPosition[index]}大将',
+      '${yakshaGeneralsByDialPosition[index]}大將',
+    DisplayLanguage.english => romanizedYakshaGeneralsByDialPosition[index],
+    DisplayLanguage.japanese => '${yakshaGeneralsByDialPosition[index]}大将',
   };
 
   String _weekLabel(int number) => switch (language) {
@@ -428,7 +246,8 @@ class ClockPainter extends CustomPainter {
     );
   }
 
-  void _drawRotatingPageRays(
+  // ignore: unused_element
+  void _legacyDrawRotatingPageRays(
     Canvas canvas,
     Offset center,
     Size size,
@@ -467,7 +286,8 @@ class ClockPainter extends CustomPainter {
     }
   }
 
-  void _drawBranchAndGeneralCelebration(
+  // ignore: unused_element
+  void _legacyDrawBranchAndGeneralCelebration(
     Canvas canvas,
     Offset center,
     double outerRadius,
@@ -557,7 +377,8 @@ class ClockPainter extends CustomPainter {
     }
   }
 
-  void _drawBranchAndGeneralSpotlight(
+  // ignore: unused_element
+  void _legacyDrawBranchAndGeneralSpotlight(
     Canvas canvas,
     Offset center,
     double outerRadius,
@@ -594,7 +415,8 @@ class ClockPainter extends CustomPainter {
     canvas.drawCircle(center, bandRadius, glowPaint);
   }
 
-  void _drawWeeks(Canvas canvas, Offset center, double radius) {
+  // ignore: unused_element
+  void _legacyDrawWeeks(Canvas canvas, Offset center, double radius) {
     // 绘制星期数字圈（一年52周）
     final Paint ringPaint = Paint()
       ..style = PaintingStyle.stroke
@@ -670,7 +492,8 @@ class ClockPainter extends CustomPainter {
     }
   }
 
-  void _drawDaysOfYear(Canvas canvas, Offset center, double radius) {
+  // ignore: unused_element
+  void _legacyDrawDaysOfYear(Canvas canvas, Offset center, double radius) {
     final int totalDays = DateTime(
       now.year + 1,
       1,
@@ -815,7 +638,8 @@ class ClockPainter extends CustomPainter {
     }
   }
 
-  void _drawMonths(Canvas canvas, Offset center, double radius) {
+  // ignore: unused_element
+  void _legacyDrawMonths(Canvas canvas, Offset center, double radius) {
     int currentMonth = now.month;
     final int totalDays = DateTime(
       now.year + 1,
@@ -930,7 +754,8 @@ class ClockPainter extends CustomPainter {
     }
   }
 
-  void _drawDial(Canvas canvas, Offset center, double radius) {
+  // ignore: unused_element
+  void _legacyDrawDial(Canvas canvas, Offset center, double radius) {
     final Paint outer = Paint()
       ..style = PaintingStyle.fill
       ..color = colorScheme.surfaceContainerLowest;
@@ -975,7 +800,7 @@ class ClockPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 36
       ..strokeCap = StrokeCap.butt
-      ..color = const Color(0xFFF1C40F).withOpacity(0.5); // 金黄色高亮
+      ..color = const Color(0xFFF1C40F).withValues(alpha: 0.5); // 金黄色高亮
 
     if (_isVisible(ClockDialRing.branches)) {
       canvas.save();
@@ -997,7 +822,7 @@ class ClockPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 30
       ..strokeCap = StrokeCap.butt
-      ..color = const Color(0xFFF1C40F).withOpacity(0.3); // 略淡一点
+      ..color = const Color(0xFFF1C40F).withValues(alpha: 0.3); // 略淡一点
 
     if (_isVisible(ClockDialRing.meridians)) {
       canvas.drawArc(
@@ -1024,16 +849,11 @@ class ClockPainter extends CustomPainter {
     // canvas.drawCircle(center, radius * 0.70, inline2);
   }
 
-  void _drawTicks(Canvas canvas, Offset center, double radius) {
-    final Paint majorPaint = Paint()
-      ..strokeWidth = 2
-      ..color = const Color(0xFF2C3E50);
+  // ignore: unused_element
+  void _legacyDrawTicks(Canvas canvas, Offset center, double radius) {
     final Paint hourPaint = Paint()
       ..strokeWidth = 2
       ..color = const Color(0xFF7F8C8D);
-    final Paint minutePaint = Paint()
-      ..strokeWidth = 1
-      ..color = const Color(0xFFBDC3C7);
     final Paint branchPaint = Paint()
       ..strokeWidth = 1
       ..color = Colors.black54;
@@ -1123,7 +943,8 @@ class ClockPainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _drawFeaturedEarthBranches(
+  // ignore: unused_element
+  void _legacyDrawFeaturedEarthBranches(
     Canvas canvas,
     Offset center,
     double branchRadius,
@@ -1177,7 +998,8 @@ class ClockPainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _drawFeaturedYakshaGenerals(
+  // ignore: unused_element
+  void _legacyDrawFeaturedYakshaGenerals(
     Canvas canvas,
     Offset center,
     double hourRadius,
@@ -1233,7 +1055,8 @@ class ClockPainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _drawEarthBranches(Canvas canvas, Offset center, double radius) {
+  // ignore: unused_element
+  void _legacyDrawEarthBranches(Canvas canvas, Offset center, double radius) {
     final normalTextOpacity = 1 - _rotationPulse() * 0.72;
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
@@ -1282,7 +1105,8 @@ class ClockPainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _drawMeridians(Canvas canvas, Offset center, double radius) {
+  // ignore: unused_element
+  void _legacyDrawMeridians(Canvas canvas, Offset center, double radius) {
     // 绘制经络圈背景
     final Paint ringPaint = Paint()
       ..style = PaintingStyle.stroke
@@ -1343,7 +1167,8 @@ class ClockPainter extends CustomPainter {
     }
   }
 
-  void _drawNumbers(Canvas canvas, Offset center, double radius) {
+  // ignore: unused_element
+  void _legacyDrawNumbers(Canvas canvas, Offset center, double radius) {
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
@@ -1393,7 +1218,8 @@ class ClockPainter extends CustomPainter {
     }
   }
 
-  void _drawMiniteNumbers(Canvas canvas, Offset center, double radius) {
+  // ignore: unused_element
+  void _legacyDrawMiniteNumbers(Canvas canvas, Offset center, double radius) {
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
@@ -1446,7 +1272,8 @@ class ClockPainter extends CustomPainter {
     }
   }
 
-  void _drawSecondsDial(Canvas canvas, Offset center, double radius) {
+  // ignore: unused_element
+  void _legacyDrawSecondsDial(Canvas canvas, Offset center, double radius) {
     // 绘制小秒盘背景
     final Paint bgPaint = Paint()
       ..style = PaintingStyle.fill
@@ -1515,71 +1342,6 @@ class ClockPainter extends CustomPainter {
         position - Offset(textPainter.width / 2, textPainter.height / 2),
       );
     }
-  }
-
-  void _drawHands(
-    Canvas canvas,
-    Offset center,
-    double radius,
-    Offset secondsCenter,
-    double secondsRadius,
-  ) {
-    final hourAngle = _degToRad((now.hour + now.minute / 60) * 15) + pi;
-    final minuteAngle = _degToRad(now.minute * 6);
-    final secondAngle = _degToRad(now.second * 6);
-    final isDarkTheme = colorScheme.brightness == Brightness.dark;
-
-    final hourPaint = Paint()
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round
-      ..color = isDarkTheme ? colorScheme.primaryContainer : Colors.black45;
-    final minutePaint = Paint()
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..color = isDarkTheme ? colorScheme.secondaryContainer : Colors.black38;
-    final secondPaint = Paint()
-      ..strokeWidth = 1.5
-      ..strokeCap = StrokeCap.round
-      ..color = isDarkTheme ? colorScheme.error : Colors.red;
-
-    final hourEnd = _pointOnCircle(center, radius * 0.84, hourAngle);
-    final minuteEnd = _pointOnCircle(center, radius * 0.39, minuteAngle);
-    final secondEnd = _pointOnCircle(
-      secondsCenter,
-      secondsRadius * 0.9,
-      secondAngle,
-    );
-
-    if (isDarkTheme) {
-      final hourGlow = Paint()
-        ..strokeWidth = 14
-        ..strokeCap = StrokeCap.round
-        ..color = colorScheme.primary.withValues(alpha: 0.54)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-      final minuteGlow = Paint()
-        ..strokeWidth = 10
-        ..strokeCap = StrokeCap.round
-        ..color = colorScheme.secondary.withValues(alpha: 0.48)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-      final secondGlow = Paint()
-        ..strokeWidth = 5
-        ..strokeCap = StrokeCap.round
-        ..color = colorScheme.error.withValues(alpha: 0.58)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-      canvas.drawLine(center, hourEnd, hourGlow);
-      canvas.drawLine(center, minuteEnd, minuteGlow);
-      canvas.drawLine(secondsCenter, secondEnd, secondGlow);
-      canvas.drawCircle(secondsCenter, 7, secondGlow);
-    }
-
-    // 时分针 基于大表盘圆心 center
-    canvas.drawLine(center, hourEnd, hourPaint);
-    canvas.drawLine(center, minuteEnd, minutePaint);
-
-    // 秒针 基于小表盘圆心 secondsCenter
-    canvas.drawLine(secondsCenter, secondEnd, secondPaint);
-    // 绘制小秒盘中心红点
-    canvas.drawCircle(secondsCenter, 3, secondPaint);
   }
 
   Offset _pointOnCircle(Offset center, double radius, double angle) {

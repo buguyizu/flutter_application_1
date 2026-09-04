@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'clock_page.dart';
-import 'clock_painter.dart';
+import 'clock_models.dart';
 
 class ClockApp extends StatefulWidget {
   const ClockApp({super.key});
