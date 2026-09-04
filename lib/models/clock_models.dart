@@ -60,19 +60,31 @@ enum ClockDialRing {
   seconds,
 }
 
+abstract final class ClockRadiusFactors {
+  static const hourBase = 0.86;
+  static const hourNumbers = 0.91;
+  static const hourOutline = 0.97;
+  static const branches = 0.68;
+  static const meridians = 0.56;
+  static const minutes = 0.45;
+  static const seconds = 0.15;
+  static const secondsVerticalOffset = 0.22;
+}
+
 extension ClockDialRingMetrics on ClockDialRing {
   double radiusFor(double outerRadius) {
-    final hourRadius = outerRadius * 0.86;
+    final hourRadius = outerRadius * ClockRadiusFactors.hourBase;
     return switch (this) {
       ClockDialRing.months => outerRadius,
       ClockDialRing.weeks => outerRadius * 0.975 - 7,
       ClockDialRing.days => outerRadius * 0.925,
-      ClockDialRing.hours => hourRadius * 0.91,
-      ClockDialRing.branchNumbers => hourRadius * 0.68 + 30,
-      ClockDialRing.branches => hourRadius * 0.68,
-      ClockDialRing.meridians => hourRadius * 0.56,
-      ClockDialRing.minutes => hourRadius * 0.45 + 12,
-      ClockDialRing.seconds => hourRadius * 0.15,
+      ClockDialRing.hours => hourRadius * ClockRadiusFactors.hourNumbers,
+      ClockDialRing.branchNumbers =>
+        hourRadius * ClockRadiusFactors.branches + 30,
+      ClockDialRing.branches => hourRadius * ClockRadiusFactors.branches,
+      ClockDialRing.meridians => hourRadius * ClockRadiusFactors.meridians,
+      ClockDialRing.minutes => hourRadius * ClockRadiusFactors.minutes + 12,
+      ClockDialRing.seconds => hourRadius * ClockRadiusFactors.seconds,
     };
   }
 

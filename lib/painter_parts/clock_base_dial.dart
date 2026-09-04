@@ -17,7 +17,7 @@ extension ClockPainterBaseDial on ClockPainter {
     canvas.drawCircle(center, radius, outer);
     canvas.drawCircle(center, radius, outline);
     if (_isVisible(ClockDialRing.branches)) {
-      canvas.drawCircle(center, radius * 0.68, inline1);
+      canvas.drawCircle(center, radius * ClockRadiusFactors.branches, inline1);
     }
 
     final emptyBranchRing = Paint()
@@ -25,7 +25,11 @@ extension ClockPainterBaseDial on ClockPainter {
       ..strokeWidth = 24
       ..color = colorScheme.tertiaryContainer.withValues(alpha: 0.58);
     if (_isVisible(ClockDialRing.branchNumbers)) {
-      canvas.drawCircle(center, radius * 0.68 + 30, emptyBranchRing);
+      canvas.drawCircle(
+        center,
+        radius * ClockRadiusFactors.branches + 30,
+        emptyBranchRing,
+      );
     }
 
     final branchIndex = ((now.hour + 1) % 24) ~/ 2;
@@ -44,7 +48,10 @@ extension ClockPainterBaseDial on ClockPainter {
       canvas.rotate(-branchNumbersRotation);
       canvas.translate(-center.dx, -center.dy);
       canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius * 0.68),
+        Rect.fromCircle(
+          center: center,
+          radius: radius * ClockRadiusFactors.branches,
+        ),
         startAngleRad,
         sweepAngleRad,
         false,
@@ -60,7 +67,10 @@ extension ClockPainterBaseDial on ClockPainter {
       ..color = const Color(0xFFF1C40F).withValues(alpha: 0.3);
     if (_isVisible(ClockDialRing.meridians)) {
       canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius * 0.56),
+        Rect.fromCircle(
+          center: center,
+          radius: radius * ClockRadiusFactors.meridians,
+        ),
         startAngleRad,
         sweepAngleRad,
         false,
@@ -73,7 +83,11 @@ extension ClockPainterBaseDial on ClockPainter {
       ..strokeWidth = 28
       ..color = colorScheme.surfaceContainerHigh.withValues(alpha: 0.72);
     if (_isVisible(ClockDialRing.hours)) {
-      canvas.drawCircle(center, radius * 0.91, numberRingPaint);
+      canvas.drawCircle(
+        center,
+        radius * ClockRadiusFactors.hourNumbers,
+        numberRingPaint,
+      );
     }
   }
 }

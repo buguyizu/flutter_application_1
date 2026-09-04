@@ -930,9 +930,11 @@ class _ClockPageState extends State<ClockPage>
   ClockDialRing? _clockRingAt(Offset position, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final outerRadius = size.shortestSide / 2 - 10;
-    final hourRadius = outerRadius * 0.86;
-    final secondsCenter = center + Offset(0, -hourRadius * 0.22);
-    final secondsRadius = hourRadius * 0.15;
+    final hourRadius = outerRadius * ClockRadiusFactors.hourBase;
+    final secondsCenter =
+        center +
+        Offset(0, -hourRadius * ClockRadiusFactors.secondsVerticalOffset);
+    final secondsRadius = hourRadius * ClockRadiusFactors.seconds;
     if (_visibleClockRings.contains(ClockDialRing.seconds) &&
         (position - secondsCenter).distance <= secondsRadius) {
       return ClockDialRing.seconds;

@@ -156,11 +156,13 @@ class ClockPainter extends CustomPainter {
     }
 
     // 3. 24小时表盘 (原内容作为核心) - 位于月份圈内侧
-    double hourRadius = maxRadius * 0.86;
+    double hourRadius = maxRadius * ClockRadiusFactors.hourBase;
 
     // 小秒盘跟随 hourRadius 调整
-    final secondsCenter = center + Offset(0, -hourRadius * 0.22);
-    final secondsRadius = hourRadius * 0.15;
+    final secondsCenter =
+        center +
+        Offset(0, -hourRadius * ClockRadiusFactors.secondsVerticalOffset);
+    final secondsRadius = hourRadius * ClockRadiusFactors.seconds;
 
     // 绘制层级 (从下到上)
 
@@ -176,22 +178,30 @@ class ClockPainter extends CustomPainter {
     // 刻度与数字
     _drawTicks(canvas, center, hourRadius);
     if (_isVisible(ClockDialRing.hours)) {
-      _drawNumbers(canvas, center, hourRadius * 0.91);
+      _drawNumbers(canvas, center, hourRadius * ClockRadiusFactors.hourNumbers);
     }
 
     // 4. 地支
     if (_isVisible(ClockDialRing.branches)) {
-      _drawEarthBranches(canvas, center, hourRadius * 0.68);
+      _drawEarthBranches(
+        canvas,
+        center,
+        hourRadius * ClockRadiusFactors.branches,
+      );
     }
 
     // 5. 经络
     if (_isVisible(ClockDialRing.meridians)) {
-      _drawMeridians(canvas, center, hourRadius * 0.56);
+      _drawMeridians(canvas, center, hourRadius * ClockRadiusFactors.meridians);
     }
 
     // 5.5 分钟圈（放在心经圈以内）
     if (_isVisible(ClockDialRing.minutes)) {
-      _drawMiniteNumbers(canvas, center, hourRadius * 0.45);
+      _drawMiniteNumbers(
+        canvas,
+        center,
+        hourRadius * ClockRadiusFactors.minutes,
+      );
     }
 
     // 6. 小秒盘
@@ -210,7 +220,11 @@ class ClockPainter extends CustomPainter {
 
     canvas.drawCircle(center, 6, Paint()..color = colorScheme.onSurface);
     if (isBranchNumbersRotating && _isVisible(ClockDialRing.branches)) {
-      _drawFeaturedEarthBranches(canvas, center, hourRadius * 0.68);
+      _drawFeaturedEarthBranches(
+        canvas,
+        center,
+        hourRadius * ClockRadiusFactors.branches,
+      );
     }
     if (isBranchNumbersRotating && _isVisible(ClockDialRing.branchNumbers)) {
       _drawFeaturedYakshaGenerals(canvas, center, hourRadius);

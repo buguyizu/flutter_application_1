@@ -60,7 +60,7 @@ extension ClockPainterFeaturedEffects on ClockPainter {
     double hourRadius,
   ) {
     final pulse = _rotationPulse();
-    final generalRadius = hourRadius * 0.68 + 30;
+    final generalRadius = hourRadius * ClockRadiusFactors.branches + 30;
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,

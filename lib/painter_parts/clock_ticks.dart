@@ -10,7 +10,7 @@ extension ClockPainterTicks on ClockPainter {
       ..color = Colors.black54;
 
     if (_isVisible(ClockDialRing.hours)) {
-      final hourOutlineRadius = radius * 0.97;
+      final hourOutlineRadius = radius * ClockRadiusFactors.hourOutline;
       for (int i = 0; i < 24; i++) {
         final angle = _degToRad(i * 15 + 180);
         final start = _pointOnCircle(center, hourOutlineRadius, angle);
@@ -26,8 +26,16 @@ extension ClockPainterTicks on ClockPainter {
       canvas.translate(-center.dx, -center.dy);
       for (int i = 0; i < 12; i++) {
         final angle = _degToRad(i * 30 + 180 + 15);
-        final start = _pointOnCircle(center, radius * 0.68 + 18, angle);
-        final end = _pointOnCircle(center, radius * 0.68 - 18, angle);
+        final start = _pointOnCircle(
+          center,
+          radius * ClockRadiusFactors.branches + 18,
+          angle,
+        );
+        final end = _pointOnCircle(
+          center,
+          radius * ClockRadiusFactors.branches - 18,
+          angle,
+        );
         canvas.drawLine(start, end, branchPaint);
       }
       canvas.restore();
@@ -40,7 +48,7 @@ extension ClockPainterTicks on ClockPainter {
     canvas.translate(center.dx, center.dy);
     canvas.rotate(-branchNumbersRotation);
     canvas.translate(-center.dx, -center.dy);
-    final generalRadius = radius * 0.68 + 30;
+    final generalRadius = radius * ClockRadiusFactors.branches + 30;
     for (int i = 0; i < 12; i++) {
       final angle = _degToRad(i * 30 + 180 + 15);
       canvas.drawLine(
