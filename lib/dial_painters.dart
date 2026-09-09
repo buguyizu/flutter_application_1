@@ -4,6 +4,339 @@ import 'package:flutter/material.dart';
 
 import 'models/clock_models.dart';
 
+class HexagramDialPlaceholderPainter extends CustomPainter {
+  HexagramDialPlaceholderPainter({
+    required this.colorScheme,
+    this.rotation = 0,
+  });
+
+  final ColorScheme colorScheme;
+  final double rotation;
+
+  static const _names = <String>[
+    '乾',
+    '坤',
+    '屯',
+    '蒙',
+    '需',
+    '讼',
+    '师',
+    '比',
+    '小畜',
+    '履',
+    '泰',
+    '否',
+    '同人',
+    '大有',
+    '谦',
+    '豫',
+    '随',
+    '蛊',
+    '临',
+    '观',
+    '噬嗑',
+    '贲',
+    '剥',
+    '复',
+    '无妄',
+    '大畜',
+    '颐',
+    '大过',
+    '坎',
+    '离',
+    '咸',
+    '恒',
+    '遯',
+    '大壮',
+    '晋',
+    '明夷',
+    '家人',
+    '睽',
+    '蹇',
+    '解',
+    '损',
+    '益',
+    '夬',
+    '姤',
+    '萃',
+    '升',
+    '困',
+    '井',
+    '革',
+    '鼎',
+    '震',
+    '艮',
+    '渐',
+    '归妹',
+    '丰',
+    '旅',
+    '巽',
+    '兑',
+    '涣',
+    '节',
+    '中孚',
+    '小过',
+    '既济',
+    '未济',
+  ];
+
+  static const _symbols = <String>[
+    '䷀',
+    '䷁',
+    '䷂',
+    '䷃',
+    '䷄',
+    '䷅',
+    '䷆',
+    '䷇',
+    '䷈',
+    '䷉',
+    '䷊',
+    '䷋',
+    '䷌',
+    '䷍',
+    '䷎',
+    '䷏',
+    '䷐',
+    '䷑',
+    '䷒',
+    '䷓',
+    '䷔',
+    '䷕',
+    '䷖',
+    '䷗',
+    '䷘',
+    '䷙',
+    '䷚',
+    '䷛',
+    '䷜',
+    '䷝',
+    '䷞',
+    '䷟',
+    '䷠',
+    '䷡',
+    '䷢',
+    '䷣',
+    '䷤',
+    '䷥',
+    '䷦',
+    '䷧',
+    '䷨',
+    '䷩',
+    '䷪',
+    '䷫',
+    '䷬',
+    '䷭',
+    '䷮',
+    '䷯',
+    '䷰',
+    '䷱',
+    '䷲',
+    '䷳',
+    '䷴',
+    '䷵',
+    '䷶',
+    '䷷',
+    '䷸',
+    '䷹',
+    '䷺',
+    '䷻',
+    '䷼',
+    '䷽',
+    '䷾',
+    '䷿',
+  ];
+
+  // Clockwise outer-ring order from the reference circular arrangement.
+  static const _circleNames = <String>[
+    '乾',
+    '姤',
+    '大过',
+    '鼎',
+    '恒',
+    '巽',
+    '井',
+    '蛊',
+    '升',
+    '讼',
+    '困',
+    '未济',
+    '解',
+    '涣',
+    '坎',
+    '蒙',
+    '师',
+    '遯',
+    '咸',
+    '旅',
+    '小过',
+    '渐',
+    '蹇',
+    '艮',
+    '谦',
+    '否',
+    '萃',
+    '晋',
+    '豫',
+    '观',
+    '比',
+    '剥',
+    '坤',
+    '复',
+    '颐',
+    '屯',
+    '益',
+    '震',
+    '噬嗑',
+    '随',
+    '无妄',
+    '明夷',
+    '贲',
+    '既济',
+    '家人',
+    '丰',
+    '离',
+    '革',
+    '同人',
+    '临',
+    '损',
+    '节',
+    '中孚',
+    '归妹',
+    '睽',
+    '兑',
+    '履',
+    '泰',
+    '大畜',
+    '需',
+    '小畜',
+    '大壮',
+    '大有',
+    '夬',
+  ];
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
+    canvas.translate(-center.dx, -center.dy);
+    final radius = size.shortestSide / 2 - 6;
+    final outerRingRadius = radius * 0.96;
+    final nameRadius = radius * 0.87;
+    final symbolRadius = radius * 0.76;
+    final segmentAngle = 2 * pi / 64;
+    final startAngle = -pi / 2 - segmentAngle;
+
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()..color = colorScheme.surfaceContainerLowest,
+    );
+    final alternatingBandPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = radius * 0.28
+      ..strokeCap = StrokeCap.butt
+      ..color = colorScheme.primary.withValues(alpha: 0.08);
+    for (var index = 0; index < 64; index += 2) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius * 0.82),
+        startAngle + index * segmentAngle,
+        segmentAngle,
+        false,
+        alternatingBandPaint,
+      );
+    }
+    canvas.drawCircle(
+      center,
+      outerRingRadius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4
+        ..color = colorScheme.outline.withValues(alpha: 0.6),
+    );
+    for (var index = 0; index < 64; index++) {
+      final boundaryAngle = startAngle + index * segmentAngle;
+      final angle = boundaryAngle + segmentAngle / 2;
+      final name = _circleNames[index];
+      final symbol = _symbols[_names.indexOf(name)];
+      canvas.drawLine(
+        Offset(
+          center.dx + cos(boundaryAngle) * (outerRingRadius - 6),
+          center.dy + sin(boundaryAngle) * (outerRingRadius - 6),
+        ),
+        Offset(
+          center.dx + cos(boundaryAngle) * outerRingRadius,
+          center.dy + sin(boundaryAngle) * outerRingRadius,
+        ),
+        Paint()
+          ..strokeWidth = 0.7
+          ..color = colorScheme.outline.withValues(alpha: 0.35),
+      );
+
+      final namePainter =
+          TextPainter(
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.center,
+            )
+            ..text = TextSpan(
+              text: name.split('').join('\n'),
+              style: TextStyle(
+                color: colorScheme.onSurface,
+                fontSize: 16,
+                fontWeight: FontWeight.normal,
+              ),
+            )
+            ..layout(maxWidth: 30);
+      final symbolPainter =
+          TextPainter(
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.center,
+            )
+            ..text = TextSpan(
+              text: symbol,
+              style: TextStyle(
+                color: colorScheme.onSurface,
+                fontSize: 26,
+                fontFamily: 'Noto Sans Symbols 2',
+              ),
+            )
+            ..layout(maxWidth: 24);
+      final namePosition = Offset(
+        center.dx + cos(angle) * nameRadius,
+        center.dy + sin(angle) * nameRadius,
+      );
+      final symbolPosition = Offset(
+        center.dx + cos(angle) * symbolRadius,
+        center.dy + sin(angle) * symbolRadius,
+      );
+      canvas.save();
+      canvas.translate(namePosition.dx, namePosition.dy);
+      canvas.rotate(angle + pi / 2);
+      namePainter.paint(
+        canvas,
+        Offset(-namePainter.width / 2, -namePainter.height / 2),
+      );
+      canvas.restore();
+      canvas.save();
+      canvas.translate(symbolPosition.dx, symbolPosition.dy);
+      canvas.rotate(angle + pi / 2);
+      symbolPainter.paint(
+        canvas,
+        Offset(-symbolPainter.width / 2, -symbolPainter.height / 2),
+      );
+      canvas.restore();
+    }
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant HexagramDialPlaceholderPainter oldDelegate) =>
+      oldDelegate.colorScheme != colorScheme ||
+      oldDelegate.rotation != rotation;
+}
+
 void _drawSmallDialHoverGlow(
   Canvas canvas,
   Offset center,
@@ -20,7 +353,7 @@ void _drawSmallDialHoverGlow(
     Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = ringWidth + 14
-      ..color = const Color(0xFFFFD166).withValues(alpha: 0.48)
+      ..color = const Color(0xFFB2EBF2).withValues(alpha: 0.36)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
   );
 }
@@ -122,7 +455,7 @@ class BranchPlaceholderPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = ringWidth
           ..strokeCap = StrokeCap.butt
-          ..color = const Color(0xFFFFD166).withValues(alpha: 0.72),
+          ..color = const Color(0xFFB2EBF2).withValues(alpha: 0.68),
       );
     }
     canvas.drawCircle(
@@ -307,7 +640,7 @@ class ThirtySegmentDialPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = ringWidth
           ..strokeCap = StrokeCap.butt
-          ..color = const Color(0xFFFFD166).withValues(alpha: 0.72),
+          ..color = const Color(0xFFB2EBF2).withValues(alpha: 0.68),
       );
     }
     canvas.drawArc(
@@ -552,7 +885,7 @@ class TwelveSegmentDialPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = ringWidth
           ..strokeCap = StrokeCap.butt
-          ..color = const Color(0xFFFFD166).withValues(alpha: 0.72),
+          ..color = const Color(0xFFB2EBF2).withValues(alpha: 0.68),
       );
     }
 

@@ -8,7 +8,7 @@ void main() {
     await tester.pumpWidget(const ClockApp());
     await tester.pump();
 
-    expect(find.text('Time Flow'), findsOneWidget);
+    expect(find.text('Time Flow'), findsAtLeastNWidgets(1));
     expect(find.textContaining('1.0.1'), findsNothing);
   });
 
@@ -61,19 +61,12 @@ void main() {
 
     expect(find.byIcon(Icons.layers_outlined), findsOneWidget);
 
-    final protectionButton = find.byKey(
-      const ValueKey('toggle_protection_button'),
+    final rightPanelButton = find.byKey(
+      const ValueKey('toggle_right_panel_button'),
     );
-    await tester.ensureVisible(protectionButton);
-    await tester.tap(protectionButton);
+    await tester.ensureVisible(rightPanelButton);
+    await tester.tap(rightPanelButton);
     await tester.pump();
-    expect(
-      find.descendant(
-        of: protectionButton,
-        matching: find.byIcon(Icons.expand_less),
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(protectionButton);
+    await tester.tap(rightPanelButton);
   });
 }

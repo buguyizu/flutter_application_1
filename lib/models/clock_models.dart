@@ -62,6 +62,8 @@ enum ClockDialRing {
   seconds,
 }
 
+enum MainDialMode { timeFlow, hexagrams }
+
 abstract final class ClockRadiusFactors {
   static const weeks = 0.975;
   static const days = 0.925;

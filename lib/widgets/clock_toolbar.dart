@@ -16,20 +16,17 @@ class ClockToolbar extends StatelessWidget {
         color: toolbarSurface,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: SizedBox(
-              width: 158,
-              height: 74,
-              child: GridView.count(
-                crossAxisCount: 4,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1,
-                crossAxisSpacing: 1,
-                mainAxisSpacing: 1,
-                children: children,
-              ),
+          padding: const EdgeInsets.all(6),
+          child: SizedBox(
+            width: 154,
+            height: 74,
+            child: GridView.count(
+              crossAxisCount: 4,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 1,
+              crossAxisSpacing: 6,
+              mainAxisSpacing: 6,
+              children: children,
             ),
           ),
         ),
