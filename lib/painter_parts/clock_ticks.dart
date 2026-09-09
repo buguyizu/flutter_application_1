@@ -14,7 +14,13 @@ extension ClockPainterTicks on ClockPainter {
       for (int i = 0; i < 24; i++) {
         final angle = _degToRad(i * 15 + 180);
         final start = _pointOnCircle(center, hourOutlineRadius, angle);
-        final end = _pointOnCircle(center, hourOutlineRadius - 6, angle);
+        final end = _pointOnCircle(
+          center,
+          radius *
+              (ClockRadiusFactors.hourOutline -
+                  ClockRadiusFactors.hourTickLength),
+          angle,
+        );
         canvas.drawLine(start, end, hourPaint);
       }
     }
@@ -26,14 +32,15 @@ extension ClockPainterTicks on ClockPainter {
       canvas.translate(-center.dx, -center.dy);
       for (int i = 0; i < 12; i++) {
         final angle = _degToRad(i * 30 + 180 + 15);
+        final branchRadius = radius * ClockRadiusFactors.branches;
         final start = _pointOnCircle(
           center,
-          radius * ClockRadiusFactors.branches + 18,
+          branchRadius * (1 + ClockRadiusFactors.branchTickHalfWidth),
           angle,
         );
         final end = _pointOnCircle(
           center,
-          radius * ClockRadiusFactors.branches - 18,
+          branchRadius * (1 - ClockRadiusFactors.branchTickHalfWidth),
           angle,
         );
         canvas.drawLine(start, end, branchPaint);
@@ -48,12 +55,22 @@ extension ClockPainterTicks on ClockPainter {
     canvas.translate(center.dx, center.dy);
     canvas.rotate(-branchNumbersRotation);
     canvas.translate(-center.dx, -center.dy);
-    final generalRadius = radius * ClockRadiusFactors.branches + 30;
+    final generalRadius =
+        radius *
+        (ClockRadiusFactors.branches + ClockRadiusFactors.branchNumbersOffset);
     for (int i = 0; i < 12; i++) {
       final angle = _degToRad(i * 30 + 180 + 15);
       canvas.drawLine(
-        _pointOnCircle(center, generalRadius + 12, angle),
-        _pointOnCircle(center, generalRadius - 12, angle),
+        _pointOnCircle(
+          center,
+          generalRadius * (1 + ClockRadiusFactors.branchNumbersTickHalfWidth),
+          angle,
+        ),
+        _pointOnCircle(
+          center,
+          generalRadius * (1 - ClockRadiusFactors.branchNumbersTickHalfWidth),
+          angle,
+        ),
         branchPaint,
       );
     }

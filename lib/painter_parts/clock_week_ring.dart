@@ -2,11 +2,13 @@ part of '../clock_painter.dart';
 
 extension ClockPainterWeekRing on ClockPainter {
   void _drawWeeks(Canvas canvas, Offset center, double radius) {
+    final bandWidth = radius * ClockRadiusFactors.weekBandWidth;
+    final bandRadius = radius - bandWidth / 2;
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
+      ..strokeWidth = bandWidth
       ..color = const Color(0xFFF4F6F6);
-    canvas.drawCircle(center, radius - 7, ringPaint);
+    canvas.drawCircle(center, bandRadius, ringPaint);
 
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
@@ -19,12 +21,18 @@ extension ClockPainterWeekRing on ClockPainter {
         .clamp(1, 52);
     final highlightWeekPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
+      ..strokeWidth = bandWidth
       ..strokeCap = StrokeCap.butt
       ..color = const Color(0xFFBDE3F8);
 
     if (hoveredRing == ClockDialRing.weeks) {
-      _drawRingHoverBand(canvas, center, radius - 7, ClockDialRing.weeks);
+      _drawRingHoverBand(
+        canvas,
+        center,
+        bandRadius,
+        ClockDialRing.weeks,
+        radius,
+      );
     }
 
     const weekCount = 52;
@@ -34,7 +42,7 @@ extension ClockPainterWeekRing on ClockPainter {
       final angle = i * angleStep + startAngleOffset;
       if (i + 1 == currentWeek) {
         canvas.drawArc(
-          Rect.fromCircle(center: center, radius: radius - 7),
+          Rect.fromCircle(center: center, radius: bandRadius),
           angle - angleStep / 2 - pi / 2,
           angleStep,
           false,
@@ -54,7 +62,7 @@ extension ClockPainterWeekRing on ClockPainter {
         ),
       );
       textPainter.layout();
-      final position = _pointOnCircle(center, radius - 7, angle);
+      final position = _pointOnCircle(center, bandRadius, angle);
       canvas.save();
       canvas.translate(position.dx, position.dy);
       canvas.rotate(angle);

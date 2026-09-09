@@ -4,11 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/app.dart';
 
 void main() {
-  testWidgets('shows app version', (tester) async {
+  testWidgets('shows the app title without a version number', (tester) async {
     await tester.pumpWidget(const ClockApp());
     await tester.pump();
 
-    expect(find.textContaining('1.0.1'), findsOneWidget);
+    expect(find.text('Time Flow'), findsOneWidget);
+    expect(find.textContaining('1.0.1'), findsNothing);
   });
 
   testWidgets('can collapse the left dial column', (tester) async {
@@ -66,7 +67,13 @@ void main() {
     await tester.ensureVisible(protectionButton);
     await tester.tap(protectionButton);
     await tester.pump();
-    expect(find.byIcon(Icons.expand_less), findsOneWidget);
+    expect(
+      find.descendant(
+        of: protectionButton,
+        matching: find.byIcon(Icons.expand_less),
+      ),
+      findsOneWidget,
+    );
     await tester.tap(protectionButton);
   });
 }

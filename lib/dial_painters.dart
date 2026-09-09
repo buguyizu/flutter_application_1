@@ -4,6 +4,27 @@ import 'package:flutter/material.dart';
 
 import 'models/clock_models.dart';
 
+void _drawSmallDialHoverGlow(
+  Canvas canvas,
+  Offset center,
+  Rect ringRect,
+  double ringWidth,
+  bool isHovered,
+) {
+  if (!isHovered) {
+    return;
+  }
+  canvas.drawCircle(
+    center,
+    ringRect.shortestSide / 2,
+    Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = ringWidth + 14
+      ..color = const Color(0xFFFFD166).withValues(alpha: 0.48)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+  );
+}
+
 class BranchPlaceholderPainter extends CustomPainter {
   BranchPlaceholderPainter(
     this.title,
@@ -72,6 +93,13 @@ class BranchPlaceholderPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = ringWidth
         ..color = const Color(0xFFE4E9ED),
+    );
+    _drawSmallDialHoverGlow(
+      canvas,
+      center,
+      ringRect,
+      ringWidth,
+      hoveredIndex != null && hoveredIndex! >= 0 && hoveredIndex! < 12,
     );
     canvas.drawArc(
       ringRect,
@@ -261,6 +289,13 @@ class ThirtySegmentDialPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = ringWidth
         ..color = const Color(0xFFE4E9ED),
+    );
+    _drawSmallDialHoverGlow(
+      canvas,
+      center,
+      ringRect,
+      ringWidth,
+      hoveredIndex != null && hoveredIndex! >= 0 && hoveredIndex! < 30,
     );
     if (hoveredIndex != null && hoveredIndex! >= 0 && hoveredIndex! < 30) {
       canvas.drawArc(
@@ -488,6 +523,13 @@ class TwelveSegmentDialPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = ringWidth
         ..color = const Color(0xFFE4E9ED),
+    );
+    _drawSmallDialHoverGlow(
+      canvas,
+      center,
+      ringRect,
+      ringWidth,
+      hoveredIndex != null && hoveredIndex! >= 0 && hoveredIndex! < 12,
     );
     canvas.drawArc(
       ringRect,

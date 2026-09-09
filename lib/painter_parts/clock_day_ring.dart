@@ -26,9 +26,6 @@ extension ClockPainterDayRing on ClockPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.6
       ..color = const Color(0xFF34474F).withValues(alpha: 0.7);
-    if (hoveredRing == ClockDialRing.days) {
-      _drawRingHoverBand(canvas, center, radius, ClockDialRing.days);
-    }
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,

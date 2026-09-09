@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'models/clock_models.dart';
 import 'models/clock_calculations.dart';
@@ -34,8 +35,6 @@ class ClockPage extends StatefulWidget {
 
 class _ClockPageState extends State<ClockPage>
     with SingleTickerProviderStateMixin {
-  static const String _appVersion = '1.0.1+1';
-
   // 连续六十甲子基准：天文纪年4年为甲子年。
   static const int _sexagenaryCycleBaseYear = 4;
 
@@ -49,15 +48,15 @@ class _ClockPageState extends State<ClockPage>
   Offset? _clockTooltipPosition;
   double _clockScale = 1.3;
   bool _leftDialColumnCollapsed = false;
+  bool _yuanHuiExpanded = true;
+  bool _branchMeridianExpanded = true;
   bool _protectionExpanded = false;
   late DisplayLanguage _language;
   final Set<ClockDialRing> _visibleClockRings = Set.of(ClockDialRing.values);
   late final AnimationController _branchNumberRotationController;
   late final ScrollController _horizontalScrollController;
 
-  DateTime _chinaNow() {
-    return DateTime.now();
-  }
+  DateTime _chinaNow() => DateTime.now();
 
   @override
   void initState() {
@@ -70,9 +69,7 @@ class _ClockPageState extends State<ClockPage>
       duration: const Duration(seconds: 10),
     )..addListener(() => setState(() {}));
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() {
-        _now = _chinaNow();
-      });
+      setState(() => _now = _chinaNow());
     });
   }
 
@@ -301,68 +298,234 @@ class _ClockPageState extends State<ClockPage>
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 8),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            'v$_appVersion',
-                                            style: TextStyle(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.outline,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                        const SizedBox(height: 20),
+                                        InkWell(
+                                          onTap: () => setState(
+                                            () => _yuanHuiExpanded =
+                                                !_yuanHuiExpanded,
+                                          ),
+                                          child: SizedBox(
+                                            width: 206,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.circle,
+                                                        size: 6,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.primary,
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Flexible(
+                                                        child: Text(
+                                                          _localized(
+                                                            '元会运世',
+                                                            'Yuan Hui Yun Shi',
+                                                            '元会運世',
+                                                          ),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: TextStyle(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .onSurface,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  _yuanHuiExpanded
+                                                      ? Icons.expand_less
+                                                      : Icons.expand_more,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(height: 20),
-                                        Text(
-                                          _localized(
-                                            '元会运世',
-                                            'Yuan Hui Yun Shi',
-                                            '元会運世',
-                                          ),
-                                          style: TextStyle(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          _localized(
-                                            '以《皇极经世》中的方式记录时间旋流，一元为129600年。\n一元含十二会，\n一会含三十运，\n一运含十二世，\n一世为三十年。\n当前日甲一元范围：\n公元前67046年~公元62553年',
-                                            'Time flows according to the Huangji Jingshi cycle. One yuan is 129,600 years.\nOne yuan contains twelve hui,\none hui contains thirty yun,\none yun contains twelve shi,\none shi contains thirty years.\nCurrent Yuan 1:\n67046 BCE - 62553 CE',
-                                            '『皇極経世』に基づき時間の流転を記録します。一元は129,600年です。\n一元は十二会、\n一会は三十運、\n一運は十二世、\n一世は三十年です。\n現在の日甲一元の範囲：\n紀元前67046年〜西暦62553年',
-                                          ),
-                                          style: TextStyle(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
-                                            fontSize: 13,
-                                            height: 1.6,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 24),
-                                        if (_protectionExpanded)
+                                        if (_yuanHuiExpanded) ...[
+                                          const SizedBox(height: 8),
                                           Text(
                                             _localized(
-                                              '大将守护',
-                                              'General Protection',
-                                              '大将の守護',
+                                              '以《皇极经世》中的方式记录时间旋流，一元为129600年。\n一元含十二会，\n一会含三十运，\n一运含十二世，\n一世为三十年。\n当前日甲一元范围：\n公元前67046年~公元62553年',
+                                              'Time flows according to the Huangji Jingshi cycle. One yuan is 129,600 years.\nOne yuan contains twelve hui,\none hui contains thirty yun,\none yun contains twelve shi,\none shi contains thirty years.\nCurrent Yuan 1:\n67046 BCE - 62553 CE',
+                                              '『皇極経世』に基づき時間の流転を記録します。一元は129,600年です。\n一元は十二会、\n一会は三十運、\n一運は十二世、\n一世は三十年です。\n現在の日甲一元の範囲：\n紀元前67046年〜西暦62553年',
                                             ),
                                             style: TextStyle(
                                               color: Theme.of(
                                                 context,
-                                              ).colorScheme.onSurface,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
+                                              ).colorScheme.onSurfaceVariant,
+                                              fontSize: 13,
+                                              height: 1.6,
                                             ),
-                                          )
-                                        else
-                                          const SizedBox.shrink(),
+                                          ),
+                                        ],
+                                        const SizedBox(height: 24),
+                                        InkWell(
+                                          onTap: () => setState(
+                                            () => _branchMeridianExpanded =
+                                                !_branchMeridianExpanded,
+                                          ),
+                                          child: SizedBox(
+                                            width: 206,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.circle,
+                                                        size: 6,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.primary,
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Flexible(
+                                                        child: Text(
+                                                          _localized(
+                                                            '地支经络',
+                                                            'Earthly Branches and Meridians',
+                                                            '地支と経絡',
+                                                          ),
+                                                          softWrap: true,
+                                                          maxLines: 2,
+                                                          style: TextStyle(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .onSurface,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  _branchMeridianExpanded
+                                                      ? Icons.expand_less
+                                                      : Icons.expand_more,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        if (_branchMeridianExpanded) ...[
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            _localized(
+                                              '地支时辰圈以十二地支划分昼夜时辰，经络圈对应十二时辰的经络运行节律。两圈由同一时刻同步旋转，展示时辰与经络的对应关系。',
+                                              'The earthly-branch ring divides the day into twelve double-hours. The meridian ring shows the meridian rhythm associated with those periods. Both rings rotate with the same time reference.',
+                                              '地支時辰の環は十二地支で一日を十二の時辰に分け、経絡の環は各時辰に対応する経絡のリズムを示します。両方の環は同じ時刻を基準に連動します。',
+                                            ),
+                                            style: TextStyle(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
+                                              fontSize: 13,
+                                              height: 1.6,
+                                            ),
+                                          ),
+                                        ],
+                                        const SizedBox(height: 24),
+                                        InkWell(
+                                          onTap: () => setState(
+                                            () => _protectionExpanded =
+                                                !_protectionExpanded,
+                                          ),
+                                          child: SizedBox(
+                                            width: 206,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.circle,
+                                                        size: 6,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.primary,
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Flexible(
+                                                        child: Text(
+                                                          _localized(
+                                                            '大将守护',
+                                                            'General Protection',
+                                                            '大将の守護',
+                                                          ),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: TextStyle(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .onSurface,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  _protectionExpanded
+                                                      ? Icons.expand_less
+                                                      : Icons.expand_more,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                         if (_protectionExpanded) ...[
                                           const SizedBox(height: 8),
                                           Text(
@@ -380,6 +543,68 @@ class _ClockPageState extends State<ClockPage>
                                             ),
                                           ),
                                         ],
+                                        const SizedBox(height: 24),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.circle,
+                                              size: 6,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              _localized(
+                                                '信息',
+                                                'Information',
+                                                '情報',
+                                              ),
+                                              style: TextStyle(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          _localized(
+                                            '时间旋流是一个以时间为轴，探索元会运世、地支时辰与经络对应关系的 Flutter 示例工程。',
+                                            'Time Flow is a Flutter sample project exploring the relationships between Yuan Hui Yun Shi, earthly branches, and meridians through time.',
+                                            '時間旋流は、時間を軸に元会運世、地支時辰、経絡の対応関係を探る Flutter サンプルプロジェクトです。',
+                                          ),
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                            fontSize: 13,
+                                            height: 1.6,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        InkWell(
+                                          onTap: () => launchUrl(
+                                            Uri.parse(
+                                              'https://github.com/buguyizu/flutter_application_1',
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '${_localized('工程目录：', 'Project: ', 'プロジェクト：')}GitHub',
+                                            style: TextStyle(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              fontSize: 13,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -485,8 +710,8 @@ class _ClockPageState extends State<ClockPage>
       return Align(
         alignment: Alignment.center,
         child: SizedBox(
-          width: 44,
-          height: 44,
+          width: 32,
+          height: 32,
           child: Tooltip(
             message: tooltipMessage,
             child: IconButton(
@@ -499,7 +724,7 @@ class _ClockPageState extends State<ClockPage>
                 foregroundColor:
                     foregroundColor ??
                     Theme.of(context).colorScheme.onSurfaceVariant,
-                fixedSize: const Size.square(44),
+                fixedSize: const Size.square(32),
                 padding: const EdgeInsets.all(4),
                 shape: buttonShape,
               ),
@@ -510,71 +735,99 @@ class _ClockPageState extends State<ClockPage>
       );
     }
 
+    final buttons = <Widget>[
+      _buildClockScaleButton(
+        context,
+        icon: Icons.add,
+        tooltip: _localized('放大大盘', 'Zoom in', '大盤を拡大'),
+        onPressed: _clockScale >= 1.8 ? null : () => _changeClockScale(0.1),
+      ),
+      buildActionButton(
+        Icon(
+          _leftDialColumnCollapsed ? Icons.chevron_right : Icons.chevron_left,
+          size: 20,
+        ),
+        _leftDialColumnCollapsed
+            ? _localized('展开左列', 'Expand left column', '左列を展開')
+            : _localized('收起左列', 'Collapse left column', '左列を折りたたむ'),
+        () => setState(() {
+          _leftDialColumnCollapsed = !_leftDialColumnCollapsed;
+        }),
+        key: const ValueKey('toggle_left_panel_button'),
+      ),
+      _buildClockScaleButton(
+        context,
+        icon: Icons.remove,
+        tooltip: _localized('缩小大盘', 'Zoom out', '大盤を縮小'),
+        onPressed: _clockScale <= 0.7 ? null : () => _changeClockScale(-0.1),
+      ),
+      buildActionButton(
+        Icon(
+          _protectionExpanded ? Icons.expand_less : Icons.expand_more,
+          size: 20,
+        ),
+        _protectionExpanded
+            ? _localized('收起大将守护', 'Collapse General Protection', '大将の守護を折りたたむ')
+            : _localized('展开大将守护', 'Expand General Protection', '大将の守護を展開'),
+        () => setState(() {
+          _protectionExpanded = !_protectionExpanded;
+        }),
+        key: const ValueKey('toggle_protection_button'),
+      ),
+      _buildClockLayerButton(context),
+      buildActionButton(
+        Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.diagonal3Values(-1, 1, 1),
+          child: const Icon(Icons.autorenew, size: 20),
+        ),
+        _localized('启动一轮旋流守护', 'Start one protection cycle', '旋流守護を開始'),
+        _branchNumberRotationController.isAnimating
+            ? null
+            : () => _branchNumberRotationController.forward(from: 0),
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+      ),
+      _buildClockScaleButton(
+        context,
+        icon: Icons.visibility,
+        tooltip: _localized('显示全部圈层', 'Show all layers', 'すべての環を表示'),
+        onPressed: _restoreAllClockRings,
+      ),
+      buildActionButton(
+        const Icon(Icons.info_outline, size: 20),
+        _localized('查看信息', 'View information', '情報を表示'),
+        () => showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(_localized('时间旋流', 'Time Flow', '時間旋流')),
+            content: Text(
+              _localized(
+                '以时间为轴，展示元会运世、地支时辰与经络的对应关系。',
+                'A time-based view of the relationships between Yuan Hui Yun Shi, earthly branches, and meridians.',
+                '時間を軸に、元会運世、地支時辰、経絡の対応関係を表示します。',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(_localized('关闭', 'Close', '閉じる')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
     return ClockToolbar(
       children: [
-        _buildClockScaleButton(
-          context,
-          icon: Icons.add,
-          tooltip: _localized('放大大盘', 'Zoom in', '大盤を拡大'),
-          onPressed: _clockScale >= 1.8 ? null : () => _changeClockScale(0.1),
-        ),
-        buildActionButton(
-          Icon(
-            _leftDialColumnCollapsed ? Icons.chevron_right : Icons.chevron_left,
-            size: 20,
-          ),
-          _leftDialColumnCollapsed
-              ? _localized('展开左列', 'Expand left column', '左列を展開')
-              : _localized('收起左列', 'Collapse left column', '左列を折りたたむ'),
-          () => setState(() {
-            _leftDialColumnCollapsed = !_leftDialColumnCollapsed;
-          }),
-          key: const ValueKey('toggle_left_panel_button'),
-        ),
-        _buildClockScaleButton(
-          context,
-          icon: Icons.remove,
-          tooltip: _localized('缩小大盘', 'Zoom out', '大盤を縮小'),
-          onPressed: _clockScale <= 0.7 ? null : () => _changeClockScale(-0.1),
-        ),
-        buildActionButton(
-          Icon(
-            _protectionExpanded ? Icons.expand_less : Icons.expand_more,
-            size: 20,
-          ),
-          _protectionExpanded
-              ? _localized(
-                  '收起大将守护',
-                  'Collapse General Protection',
-                  '大将の守護を折りたたむ',
-                )
-              : _localized('展开大将守护', 'Expand General Protection', '大将の守護を展開'),
-          () => setState(() {
-            _protectionExpanded = !_protectionExpanded;
-          }),
-          key: const ValueKey('toggle_protection_button'),
-        ),
-        _buildClockLayerButton(context),
-        buildActionButton(
-          Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.diagonal3Values(-1, 1, 1),
-            child: const Icon(Icons.autorenew, size: 20),
-          ),
-          _localized('启动一轮旋流守护', 'Start one protection cycle', '旋流守護を開始'),
-          _branchNumberRotationController.isAnimating
-              ? null
-              : () => _branchNumberRotationController.forward(from: 0),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-        ),
-        _buildClockScaleButton(
-          context,
-          icon: Icons.visibility,
-          tooltip: _localized('显示全部圈层', 'Show all layers', 'すべての環を表示'),
-          onPressed: _restoreAllClockRings,
-        ),
-        const SizedBox.shrink(),
+        buttons[0],
+        buttons[2],
+        buttons[4],
+        buttons[6],
+        buttons[1],
+        buttons[3],
+        buttons[5],
+        buttons[7],
       ],
     );
   }
@@ -590,14 +843,14 @@ class _ClockPageState extends State<ClockPage>
       child: Align(
         alignment: Alignment.center,
         child: SizedBox(
-          width: 44,
-          height: 44,
+          width: 32,
+          height: 32,
           child: IconButton(
             tooltip: tooltip,
             style: IconButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.surface,
               foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
-              fixedSize: const Size.square(44),
+              fixedSize: const Size.square(32),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -619,11 +872,11 @@ class _ClockPageState extends State<ClockPage>
       child: Align(
         alignment: Alignment.center,
         child: SizedBox(
-          width: 44,
-          height: 44,
+          width: 32,
+          height: 32,
           child: Material(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             child: PopupMenuButton<ClockDialRing>(
               padding: EdgeInsets.zero,
               iconSize: 20,
@@ -844,8 +1097,13 @@ class _ClockPageState extends State<ClockPage>
       if (ring == ClockDialRing.seconds || !_visibleClockRings.contains(ring)) {
         continue;
       }
-      final ringDistance = (distance - ring.radiusFor(outerRadius)).abs();
-      if (ringDistance <= ring.hitTolerance && ringDistance < closestDistance) {
+      final hoverRadius = ring.hoverRadiusFor(outerRadius);
+      final ringDistance = (distance - hoverRadius).abs();
+      final hitTolerance = max(
+        ring.hitTolerance,
+        ring.hoverWidthFor(outerRadius) / 2,
+      );
+      if (ringDistance <= hitTolerance && ringDistance < closestDistance) {
         closestRing = ring;
         closestDistance = ringDistance;
       }

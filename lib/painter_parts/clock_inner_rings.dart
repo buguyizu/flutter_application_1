@@ -50,7 +50,7 @@ extension ClockPainterInnerRings on ClockPainter {
   void _drawMeridians(Canvas canvas, Offset center, double radius) {
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 30
+      ..strokeWidth = radius * ClockRadiusFactors.meridianBandWidth
       ..color = const Color(0xFFD5DBDB).withValues(alpha: 0.28);
     canvas.drawCircle(center, radius, ringPaint);
     final textPainter = TextPainter(
@@ -83,8 +83,16 @@ extension ClockPainterInnerRings on ClockPainter {
     for (int i = 0; i < 12; i++) {
       final angle = _degToRad(i * 30 + 15 + 180);
       canvas.drawLine(
-        _pointOnCircle(center, radius + 15, angle),
-        _pointOnCircle(center, radius - 15, angle),
+        _pointOnCircle(
+          center,
+          radius * (1 + ClockRadiusFactors.meridianTickHalfWidth),
+          angle,
+        ),
+        _pointOnCircle(
+          center,
+          radius * (1 - ClockRadiusFactors.meridianTickHalfWidth),
+          angle,
+        ),
         linePaint,
       );
     }

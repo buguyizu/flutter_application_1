@@ -3,12 +3,7 @@ part of '../clock_painter.dart';
 extension ClockPainterMonthRing on ClockPainter {
   void _drawMonths(Canvas canvas, Offset center, double radius) {
     final currentMonth = now.month;
-    final totalDays = DateTime(
-      now.year + 1,
-      1,
-      1,
-    ).difference(DateTime(now.year, 1, 1)).inDays;
-    final dayAngleStep = 2 * pi / totalDays;
+    const monthAngleStep = 2 * pi / 12;
     const yearBoundaryAngle = -11 * pi / 12;
     const seasonColors = <Color>[
       Color(0xFFBDBDBD),
@@ -39,15 +34,12 @@ extension ClockPainterMonthRing on ClockPainter {
       ..color = Colors.black12;
 
     if (hoveredRing == ClockDialRing.months) {
-      _drawRingHoverBand(canvas, center, radius, ClockDialRing.months);
+      _drawRingHoverBand(canvas, center, radius, ClockDialRing.months, radius);
     }
-    var daysBeforeMonth = 0;
     for (int i = 0; i < 12; i++) {
       final month = i + 1;
-      final monthDays = DateTime(now.year, month + 1, 0).day;
-      final monthStartAngle =
-          yearBoundaryAngle + daysBeforeMonth * dayAngleStep;
-      final monthSweepAngle = monthDays * dayAngleStep;
+      final monthStartAngle = yearBoundaryAngle + i * monthAngleStep;
+      final monthSweepAngle = monthAngleStep;
       final monthCenterAngle = monthStartAngle + monthSweepAngle / 2;
       final seasonPaint = Paint()
         ..style = PaintingStyle.stroke
@@ -95,7 +87,6 @@ extension ClockPainterMonthRing on ClockPainter {
         Offset(-textPainter.width / 2, -textPainter.height / 2),
       );
       canvas.restore();
-      daysBeforeMonth += monthDays;
     }
   }
 }

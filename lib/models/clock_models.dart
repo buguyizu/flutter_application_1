@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 enum DisplayLanguage { chinese, traditionalChinese, english, japanese }
@@ -63,14 +65,26 @@ enum ClockDialRing {
 abstract final class ClockRadiusFactors {
   static const weeks = 0.975;
   static const days = 0.925;
+  static const weekBandWidth = 0.05;
   static const hourBase = 0.86;
   static const hourNumbers = 0.91;
   static const hourOutline = 0.97;
-  static const branches = 0.68;
-  static const meridians = 0.56;
+  static const hourTickLength = 0.015;
+  static const hourNumberBandWidth = (hourOutline - hourNumbers) * 2;
+  static const branches = 0.72;
   static const minutes = 0.45;
   static const seconds = 0.15;
   static const secondsVerticalOffset = 0.22;
+
+  static const branchBandWidth = 0.125;
+  static const meridianBandWidth = 0.15;
+  static const meridians =
+      branches * (1 - branchBandWidth / 2) / (1 + meridianBandWidth / 2);
+  static const minuteOuterOffset = 0.03;
+  static const branchTickHalfWidth = 0.0625;
+  static const meridianTickHalfWidth = 0.075;
+  static const branchNumbersOffset = 0.077;
+  static const branchNumbersTickHalfWidth = 0.038;
 }
 
 extension ClockDialRingMetrics on ClockDialRing {
@@ -78,14 +92,20 @@ extension ClockDialRingMetrics on ClockDialRing {
     final hourRadius = outerRadius * ClockRadiusFactors.hourBase;
     return switch (this) {
       ClockDialRing.months => outerRadius,
-      ClockDialRing.weeks => outerRadius * ClockRadiusFactors.weeks - 7,
+      ClockDialRing.weeks =>
+        outerRadius *
+            (ClockRadiusFactors.weeks - ClockRadiusFactors.weekBandWidth / 2),
       ClockDialRing.days => outerRadius * ClockRadiusFactors.days,
       ClockDialRing.hours => hourRadius * ClockRadiusFactors.hourNumbers,
       ClockDialRing.branchNumbers =>
-        hourRadius * ClockRadiusFactors.branches + 30,
+        hourRadius *
+            (ClockRadiusFactors.branches +
+                ClockRadiusFactors.branchNumbersOffset),
       ClockDialRing.branches => hourRadius * ClockRadiusFactors.branches,
       ClockDialRing.meridians => hourRadius * ClockRadiusFactors.meridians,
-      ClockDialRing.minutes => hourRadius * ClockRadiusFactors.minutes + 12,
+      ClockDialRing.minutes =>
+        hourRadius *
+            (ClockRadiusFactors.minutes + ClockRadiusFactors.minuteOuterOffset),
       ClockDialRing.seconds => hourRadius * ClockRadiusFactors.seconds,
     };
   }
@@ -102,17 +122,36 @@ extension ClockDialRingMetrics on ClockDialRing {
     ClockDialRing.seconds => 0,
   };
 
-  double get hoverWidth => switch (this) {
-    ClockDialRing.months => 22,
-    ClockDialRing.weeks => 16,
-    ClockDialRing.days => 10,
-    ClockDialRing.hours => 28,
-    ClockDialRing.branchNumbers => 26,
-    ClockDialRing.branches => 38,
-    ClockDialRing.meridians => 32,
-    ClockDialRing.minutes => 12,
-    ClockDialRing.seconds => 0,
-  };
+  double hoverWidthFor(double outerRadius) {
+    final ringRadius = radiusFor(outerRadius);
+    return switch (this) {
+      ClockDialRing.months => 22,
+      ClockDialRing.weeks => 16,
+      ClockDialRing.days => math.max(28.0, outerRadius * 0.09),
+      ClockDialRing.hours =>
+        ringRadius * ClockRadiusFactors.hourNumberBandWidth,
+      ClockDialRing.branchNumbers =>
+        ringRadius * ClockRadiusFactors.branchNumbersTickHalfWidth * 2,
+      ClockDialRing.branches => ringRadius * ClockRadiusFactors.branchBandWidth,
+      ClockDialRing.meridians =>
+        ringRadius * ClockRadiusFactors.meridianBandWidth,
+      ClockDialRing.minutes => math.max(32.0, outerRadius * 0.11),
+      ClockDialRing.seconds => 0,
+    };
+  }
+
+  double hoverRadiusFor(double outerRadius) {
+    return switch (this) {
+      ClockDialRing.days =>
+        radiusFor(outerRadius) - hoverWidthFor(outerRadius) / 2,
+      ClockDialRing.minutes =>
+        radiusFor(outerRadius) - hoverWidthFor(outerRadius) / 2,
+      _ => radiusFor(outerRadius),
+    };
+  }
+
+  double hoverGlowExtensionFor(double outerRadius) =>
+      math.max(16.0, hoverWidthFor(outerRadius) * 0.75);
 
   Color get hoverColor => switch (this) {
     ClockDialRing.months => const Color(0xFFFFD1DC),

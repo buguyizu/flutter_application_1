@@ -47,7 +47,8 @@ extension ClockPainterEffects on ClockPainter {
     final branchRadius = ClockDialRing.branches.radiusFor(outerRadius);
     final generalRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
     final bandRadius = (branchRadius + generalRadius) / 2;
-    final bandWidth = generalRadius - branchRadius + 52;
+    final bandWidth =
+        generalRadius - branchRadius + (generalRadius - branchRadius) * 52 / 30;
     final bandRect = Rect.fromCircle(center: center, radius: bandRadius);
     final phase = branchNumbersRotation;
     final progress = (phase / (2 * pi)).clamp(0.0, 1.0);
@@ -129,8 +130,12 @@ extension ClockPainterEffects on ClockPainter {
   ) {
     final branchRadius = ClockDialRing.branches.radiusFor(outerRadius);
     final generalRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
-    final innerEdge = branchRadius - 24;
-    final outerEdge = generalRadius + 18;
+    final branchBandHalfWidth =
+        branchRadius * ClockRadiusFactors.branchBandWidth / 2;
+    final generalBandHalfWidth =
+        generalRadius * ClockRadiusFactors.branchNumbersTickHalfWidth;
+    final innerEdge = branchRadius - branchBandHalfWidth;
+    final outerEdge = generalRadius + generalBandHalfWidth;
     final bandRadius = (innerEdge + outerEdge) / 2;
     final bandWidth = outerEdge - innerEdge;
     final pulse = _rotationPulse();
@@ -151,7 +156,7 @@ extension ClockPainterEffects on ClockPainter {
     canvas.restore();
     final glowPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = bandWidth + 18
+      ..strokeWidth = bandWidth * (1 + 18 / 82)
       ..color = const Color(0xFFFFD56A).withValues(alpha: 0.68 * pulse)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
     canvas.drawCircle(center, bandRadius, glowPaint);

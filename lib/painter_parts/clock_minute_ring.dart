@@ -6,7 +6,10 @@ extension ClockPainterMinuteRing on ClockPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
       ..color = colorScheme.outlineVariant;
-    canvas.drawCircle(center, radius + 12, ringPaint);
+    final outerRadius =
+        radius *
+        (1 + ClockRadiusFactors.minuteOuterOffset / ClockRadiusFactors.minutes);
+    canvas.drawCircle(center, outerRadius, ringPaint);
 
     final majorTickPaint = Paint()
       ..style = PaintingStyle.stroke
@@ -25,8 +28,10 @@ extension ClockPainterMinuteRing on ClockPainter {
     for (int i = 0; i < 60; i++) {
       final angle = _degToRad(i * 6);
       final isMajor = i % 5 == 0;
-      final tickOuter = radius + 12;
-      final tickInner = tickOuter - (isMajor ? 6.5 : 3.5);
+      final tickOuter = outerRadius;
+      final tickInner =
+          tickOuter -
+          radius * (isMajor ? 0.01625 : 0.00875) / ClockRadiusFactors.minutes;
       final start = _pointOnCircle(center, tickInner, angle);
       final end = _pointOnCircle(center, tickOuter, angle);
       canvas.drawLine(start, end, isMajor ? majorTickPaint : minorTickPaint);
@@ -34,7 +39,11 @@ extension ClockPainterMinuteRing on ClockPainter {
 
     for (int i = 0; i < 60; i += 5) {
       final angle = _degToRad(i * 6);
-      final position = _pointOnCircle(center, radius - 8, angle);
+      final position = _pointOnCircle(
+        center,
+        radius * (1 - 0.02 / ClockRadiusFactors.minutes),
+        angle,
+      );
       final minuteText = i == 0 ? '0' : i.toString().padLeft(2, '0');
 
       textPainter.text = TextSpan(

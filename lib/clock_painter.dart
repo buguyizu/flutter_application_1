@@ -167,7 +167,7 @@ class ClockPainter extends CustomPainter {
     // 绘制层级 (从下到上)
 
     // 背景与外框 (基于 hourRadius)
-    _drawDial(canvas, center, hourRadius * 0.97);
+    _drawDial(canvas, center, hourRadius);
     if (isBranchNumbersRotating &&
         _isVisible(ClockDialRing.branchNumbers) &&
         _isVisible(ClockDialRing.branches)) {
@@ -201,6 +201,26 @@ class ClockPainter extends CustomPainter {
         canvas,
         center,
         hourRadius * ClockRadiusFactors.minutes,
+      );
+    }
+
+    if (hoveredRing == ClockDialRing.days && _isVisible(ClockDialRing.days)) {
+      _drawRingHoverBand(
+        canvas,
+        center,
+        ClockDialRing.days.hoverRadiusFor(maxRadius),
+        ClockDialRing.days,
+        maxRadius,
+      );
+    }
+    if (hoveredRing == ClockDialRing.minutes &&
+        _isVisible(ClockDialRing.minutes)) {
+      _drawRingHoverBand(
+        canvas,
+        center,
+        ClockDialRing.minutes.hoverRadiusFor(maxRadius),
+        ClockDialRing.minutes,
+        maxRadius,
       );
     }
 
@@ -238,10 +258,11 @@ class ClockPainter extends CustomPainter {
         ring == ClockDialRing.months ||
         ring == ClockDialRing.weeks ||
         ring == ClockDialRing.days ||
+        ring == ClockDialRing.minutes ||
         ring == ClockDialRing.seconds) {
       return;
     }
-    _drawRingHoverBand(canvas, center, ring.radiusFor(radius), ring);
+    _drawRingHoverBand(canvas, center, ring.radiusFor(radius), ring, radius);
   }
 
   void _drawRingHoverBand(
@@ -249,13 +270,25 @@ class ClockPainter extends CustomPainter {
     Offset center,
     double ringRadius,
     ClockDialRing ring,
+    double outerRadius,
   ) {
+    final hoverWidth = ring.hoverWidthFor(outerRadius);
+    final glowExtension = ring.hoverGlowExtensionFor(outerRadius);
+    canvas.drawCircle(
+      center,
+      ringRadius + glowExtension / 2,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = hoverWidth + glowExtension
+        ..color = ring.hoverColor.withValues(alpha: 0.42)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
     canvas.drawCircle(
       center,
       ringRadius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = ring.hoverWidth
+        ..strokeWidth = hoverWidth
         ..color = ring.hoverColor.withValues(alpha: 0.32),
     );
   }

@@ -11,23 +11,34 @@ extension ClockPainterBaseDial on ClockPainter {
       ..color = colorScheme.outline;
     final inline1 = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 36
+      ..strokeWidth =
+          radius *
+          ClockRadiusFactors.branches *
+          ClockRadiusFactors.branchBandWidth
       ..color = colorScheme.secondaryContainer.withValues(alpha: 0.5);
 
-    canvas.drawCircle(center, radius, outer);
-    canvas.drawCircle(center, radius, outline);
+    final dialRadius = radius * ClockRadiusFactors.hourOutline;
+    canvas.drawCircle(center, dialRadius, outer);
+    canvas.drawCircle(center, dialRadius, outline);
     if (_isVisible(ClockDialRing.branches)) {
       canvas.drawCircle(center, radius * ClockRadiusFactors.branches, inline1);
     }
 
     final emptyBranchRing = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 24
+      ..strokeWidth =
+          radius *
+          (ClockRadiusFactors.branches +
+              ClockRadiusFactors.branchNumbersOffset) *
+          ClockRadiusFactors.branchNumbersTickHalfWidth *
+          2
       ..color = colorScheme.tertiaryContainer.withValues(alpha: 0.58);
     if (_isVisible(ClockDialRing.branchNumbers)) {
       canvas.drawCircle(
         center,
-        radius * ClockRadiusFactors.branches + 30,
+        radius *
+            (ClockRadiusFactors.branches +
+                ClockRadiusFactors.branchNumbersOffset),
         emptyBranchRing,
       );
     }
@@ -39,7 +50,10 @@ extension ClockPainterBaseDial on ClockPainter {
 
     final highlightPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 36
+      ..strokeWidth =
+          radius *
+          ClockRadiusFactors.branches *
+          ClockRadiusFactors.branchBandWidth
       ..strokeCap = StrokeCap.butt
       ..color = const Color(0xFFF1C40F).withValues(alpha: 0.5);
     if (_isVisible(ClockDialRing.branches)) {
@@ -62,7 +76,10 @@ extension ClockPainterBaseDial on ClockPainter {
 
     final highlightMeridianPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 30
+      ..strokeWidth =
+          radius *
+          ClockRadiusFactors.meridians *
+          ClockRadiusFactors.meridianBandWidth
       ..strokeCap = StrokeCap.butt
       ..color = const Color(0xFFF1C40F).withValues(alpha: 0.3);
     if (_isVisible(ClockDialRing.meridians)) {
@@ -80,7 +97,7 @@ extension ClockPainterBaseDial on ClockPainter {
 
     final numberRingPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 28
+      ..strokeWidth = radius * ClockRadiusFactors.hourNumberBandWidth
       ..color = colorScheme.surfaceContainerHigh.withValues(alpha: 0.72);
     if (_isVisible(ClockDialRing.hours)) {
       canvas.drawCircle(

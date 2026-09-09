@@ -11,7 +11,7 @@ class ClockToolbar extends StatelessWidget {
       context,
     ).colorScheme.surfaceContainerHighest;
     return SizedBox(
-      width: 98,
+      width: 166,
       child: Material(
         color: toolbarSurface,
         borderRadius: BorderRadius.circular(12),
@@ -20,14 +20,14 @@ class ClockToolbar extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerRight,
             child: SizedBox(
-              width: 90,
-              height: 182,
+              width: 158,
+              height: 74,
               child: GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: 4,
                 physics: const NeverScrollableScrollPhysics(),
                 childAspectRatio: 1,
-                crossAxisSpacing: 2,
-                mainAxisSpacing: 2,
+                crossAxisSpacing: 1,
+                mainAxisSpacing: 1,
                 children: children,
               ),
             ),
