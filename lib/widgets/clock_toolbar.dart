@@ -1,31 +1,44 @@
 import 'package:flutter/material.dart';
 
 class ClockToolbar extends StatelessWidget {
-  const ClockToolbar({super.key, required this.children});
+  const ClockToolbar({
+    super.key,
+    required this.children,
+    this.crossAxisCount = 4,
+    this.width = 166,
+  });
 
   final List<Widget> children;
+  final int crossAxisCount;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
     final toolbarSurface = Theme.of(
       context,
     ).colorScheme.surfaceContainerHighest;
+    const gridSpacing = 6.0;
+    final gridWidth = width - 12;
+    final rowCount = (children.length / crossAxisCount).ceil();
+    final tileExtent =
+        (gridWidth - gridSpacing * (crossAxisCount - 1)) / crossAxisCount;
+    final gridHeight = rowCount * tileExtent + gridSpacing * (rowCount - 1);
     return SizedBox(
-      width: 166,
+      width: width,
       child: Material(
         color: toolbarSurface,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(6),
           child: SizedBox(
-            width: 154,
-            height: 74,
+            width: gridWidth,
+            height: gridHeight,
             child: GridView.count(
-              crossAxisCount: 4,
+              crossAxisCount: crossAxisCount,
               physics: const NeverScrollableScrollPhysics(),
               childAspectRatio: 1,
-              crossAxisSpacing: 6,
-              mainAxisSpacing: 6,
+              crossAxisSpacing: gridSpacing,
+              mainAxisSpacing: gridSpacing,
               children: children,
             ),
           ),

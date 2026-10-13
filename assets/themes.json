@@ -1,0 +1,858 @@
+{
+  "themes": [
+    {
+      "id": "chronicleIndigoLight",
+      "name": "典藏靛蓝",
+      "preset": "chronicleIndigo",
+      "mode": "light",
+      "seedColor": "#3949AB",
+      "brightness": "light",
+      "useMaterial3": true,
+      "ui": {
+        "responsive": {
+          "breakpoint": 700,
+          "mobile": {
+            "layout": "singleColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.4,
+            "zoomStep": 0.1,
+            "zoomBaseScale": 1.4,
+            "mainDialAutoHeight": true,
+            "mainDialRadiusFactor": 0.96,
+            "mainDialCaptionFontSize": 16,
+            "hiddenRings": ["months", "weeks", "days", "seconds", "meridians"],
+            "hourRingFontSize": 12,
+            "currentHourRingFontSize": 14,
+            "rotatingGeneralFontSize": 12,
+            "rotatingBranchFontSize": 8,
+            "hexagramFontScale": 0.72,
+            "protectionRayReachFactor": 3.0,
+            "mainDialMinSize": 240,
+            "mainDialMaxSize": 540,
+            "horizontalInset": 32,
+            "reverseSections": true,
+            "infoPanelAutoHeight": true,
+            "showPanelToggleButtons": false,
+            "toolbarPlacement": "aboveMainDial",
+            "modeSwitchPlacement": "aboveMainDial",
+            "showScrollbar": false,
+            "toolbarColumns": 6
+          },
+          "desktop": {
+            "layout": "threeColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.6,
+            "zoomStep": 0.1,
+            "panelWidth": 206,
+            "mainDialBaseSize": 60,
+            "mainDialScaleFactor": 540,
+            "infoPanelHeight": 912,
+            "showPanelToggleButtons": true,
+            "toolbarPlacement": "overlay",
+            "modeSwitchPlacement": "overlay",
+            "showScrollbar": true,
+            "toolbarColumns": 4
+          }
+        },
+        "clock": {
+          "scale": 1.3,
+          "mainDialMode": "timeFlow",
+          "visibleRings": [
+            "months",
+            "weeks",
+            "days",
+            "hours",
+            "branchNumbers",
+            "branches",
+            "meridians",
+            "minutes",
+            "seconds"
+          ],
+          "leftDialColumnCollapsed": false,
+          "yuanHuiExpanded": true,
+          "branchMeridianExpanded": true,
+          "protectionExpanded": false,
+          "rightInfoColumnCollapsed": false,
+          "animationDurationSeconds": 10,
+          "hexagramRotation": 0,
+          "animationDurationMs": 220.0
+        },
+        "typography": {
+          "fontFamily": "Microsoft YaHei",
+          "titleFontSize": 22.0,
+          "bodyFontSize": 20.0,
+          "smallFontSize": 16.0,
+          "panelTitleFontSize": 18.0,
+          "textFontSize": 22.0,
+          "textFontWeight": 700.0,
+          "subtitle": {
+            "colorValue": 4281812815,
+            "fontSize": 12.0,
+            "fontWeight": 700.0
+          }
+        },
+        "layout": {
+          "panelSpacing": 8.0,
+          "clockHorizontalPadding": 30.0,
+          "containerMargin": 16.0,
+          "containerPadding": 8.0
+        },
+        "colors": {
+          "accentColorValue": 4294956394,
+          "effectColorValue": 4294034447,
+          "infoPanelTitleColorValue": 4281944491,
+          "highlightStrokeWidth": 6.0,
+          "outlineWidth": 2.0
+        },
+        "smallDial": {
+          "width": 176.0,
+          "height": 210.0
+        }
+      }
+    },
+    {
+      "id": "jingshiJadeLight",
+      "name": "京师翡翠",
+      "preset": "jingshiJade",
+      "mode": "light",
+      "seedColor": "#00796B",
+      "brightness": "light",
+      "useMaterial3": true,
+      "ui": {
+        "responsive": {
+          "breakpoint": 700,
+          "mobile": {
+            "layout": "singleColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.4,
+            "zoomStep": 0.1,
+            "zoomBaseScale": 1.4,
+            "mainDialAutoHeight": true,
+            "mainDialRadiusFactor": 0.96,
+            "mainDialCaptionFontSize": 16,
+            "hiddenRings": ["months", "weeks", "days", "seconds", "meridians"],
+            "hourRingFontSize": 12,
+            "currentHourRingFontSize": 14,
+            "rotatingGeneralFontSize": 12,
+            "rotatingBranchFontSize": 8,
+            "hexagramFontScale": 0.72,
+            "protectionRayReachFactor": 3.0,
+            "mainDialMinSize": 240,
+            "mainDialMaxSize": 540,
+            "horizontalInset": 32,
+            "reverseSections": true,
+            "infoPanelAutoHeight": true,
+            "showPanelToggleButtons": false,
+            "toolbarPlacement": "aboveMainDial",
+            "modeSwitchPlacement": "aboveMainDial",
+            "showScrollbar": false,
+            "toolbarColumns": 6
+          },
+          "desktop": {
+            "layout": "threeColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.6,
+            "zoomStep": 0.1,
+            "panelWidth": 206,
+            "mainDialBaseSize": 60,
+            "mainDialScaleFactor": 540,
+            "infoPanelHeight": 912,
+            "showPanelToggleButtons": true,
+            "toolbarPlacement": "overlay",
+            "modeSwitchPlacement": "overlay",
+            "showScrollbar": true,
+            "toolbarColumns": 4
+          }
+        },
+        "clock": {
+          "scale": 1.3,
+          "mainDialMode": "timeFlow",
+          "visibleRings": [
+            "months",
+            "weeks",
+            "days",
+            "hours",
+            "branchNumbers",
+            "branches",
+            "meridians",
+            "minutes",
+            "seconds"
+          ],
+          "leftDialColumnCollapsed": false,
+          "yuanHuiExpanded": true,
+          "branchMeridianExpanded": true,
+          "protectionExpanded": false,
+          "rightInfoColumnCollapsed": false,
+          "animationDurationSeconds": 10,
+          "hexagramRotation": 0,
+          "animationDurationMs": 220.0
+        },
+        "typography": {
+          "fontFamily": "Microsoft YaHei",
+          "titleFontSize": 22.0,
+          "bodyFontSize": 20.0,
+          "smallFontSize": 16.0,
+          "panelTitleFontSize": 18.0,
+          "textFontSize": 22.0,
+          "textFontWeight": 700.0,
+          "subtitle": {
+            "colorValue": 4281812815,
+            "fontSize": 12.0,
+            "fontWeight": 700.0
+          }
+        },
+        "layout": {
+          "panelSpacing": 8.0,
+          "clockHorizontalPadding": 30.0,
+          "containerMargin": 16.0,
+          "containerPadding": 8.0
+        },
+        "colors": {
+          "accentColorValue": 4294956394,
+          "effectColorValue": 4294034447,
+          "infoPanelTitleColorValue": 4281944491,
+          "highlightStrokeWidth": 6.0,
+          "outlineWidth": 2.0
+        },
+        "smallDial": {
+          "width": 176.0,
+          "height": 210.0
+        }
+      }
+    },
+    {
+      "id": "moonPhaseGoldLight",
+      "name": "月相金",
+      "preset": "moonPhaseGold",
+      "mode": "light",
+      "seedColor": "#B7791F",
+      "brightness": "light",
+      "useMaterial3": true,
+      "ui": {
+        "responsive": {
+          "breakpoint": 700,
+          "mobile": {
+            "layout": "singleColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.4,
+            "zoomStep": 0.1,
+            "zoomBaseScale": 1.4,
+            "mainDialAutoHeight": true,
+            "mainDialRadiusFactor": 0.96,
+            "mainDialCaptionFontSize": 16,
+            "hiddenRings": ["months", "weeks", "days", "seconds", "meridians"],
+            "hourRingFontSize": 12,
+            "currentHourRingFontSize": 14,
+            "rotatingGeneralFontSize": 12,
+            "rotatingBranchFontSize": 8,
+            "hexagramFontScale": 0.72,
+            "protectionRayReachFactor": 3.0,
+            "mainDialMinSize": 240,
+            "mainDialMaxSize": 540,
+            "horizontalInset": 32,
+            "reverseSections": true,
+            "infoPanelAutoHeight": true,
+            "showPanelToggleButtons": false,
+            "toolbarPlacement": "aboveMainDial",
+            "modeSwitchPlacement": "aboveMainDial",
+            "showScrollbar": false,
+            "toolbarColumns": 6
+          },
+          "desktop": {
+            "layout": "threeColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.6,
+            "zoomStep": 0.1,
+            "panelWidth": 206,
+            "mainDialBaseSize": 60,
+            "mainDialScaleFactor": 540,
+            "infoPanelHeight": 912,
+            "showPanelToggleButtons": true,
+            "toolbarPlacement": "overlay",
+            "modeSwitchPlacement": "overlay",
+            "showScrollbar": true,
+            "toolbarColumns": 4
+          }
+        },
+        "clock": {
+          "scale": 1.1,
+          "mainDialMode": "hexagrams",
+          "visibleRings": [
+            "months",
+            "days",
+            "hours",
+            "branches",
+            "seconds"
+          ],
+          "leftDialColumnCollapsed": false,
+          "yuanHuiExpanded": true,
+          "branchMeridianExpanded": true,
+          "protectionExpanded": false,
+          "rightInfoColumnCollapsed": false,
+          "animationDurationSeconds": 12,
+          "hexagramRotation": 0,
+          "animationDurationMs": 220.0
+        },
+        "typography": {
+          "fontFamily": "Microsoft YaHei",
+          "titleFontSize": 22.0,
+          "bodyFontSize": 20.0,
+          "smallFontSize": 16.0,
+          "panelTitleFontSize": 18.0,
+          "textFontSize": 22.0,
+          "textFontWeight": 700.0,
+          "subtitle": {
+            "colorValue": 4281812815,
+            "fontSize": 12.0,
+            "fontWeight": 700.0
+          }
+        },
+        "layout": {
+          "panelSpacing": 8.0,
+          "clockHorizontalPadding": 30.0,
+          "containerMargin": 16.0,
+          "containerPadding": 8.0
+        },
+        "colors": {
+          "accentColorValue": 4294956394,
+          "effectColorValue": 4294034447,
+          "infoPanelTitleColorValue": 4281944491,
+          "highlightStrokeWidth": 6.0,
+          "outlineWidth": 2.0
+        },
+        "smallDial": {
+          "width": 176.0,
+          "height": 210.0
+        }
+      }
+    },
+    {
+      "id": "cinnabarRedLight",
+      "name": "朱砂红",
+      "preset": "cinnabarRed",
+      "mode": "light",
+      "seedColor": "#C62828",
+      "brightness": "light",
+      "useMaterial3": true,
+      "ui": {
+        "responsive": {
+          "breakpoint": 700,
+          "mobile": {
+            "layout": "singleColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.4,
+            "zoomStep": 0.1,
+            "zoomBaseScale": 1.4,
+            "mainDialAutoHeight": true,
+            "mainDialRadiusFactor": 0.96,
+            "mainDialCaptionFontSize": 16,
+            "hiddenRings": ["months", "weeks", "days", "seconds", "meridians"],
+            "hourRingFontSize": 12,
+            "currentHourRingFontSize": 14,
+            "rotatingGeneralFontSize": 12,
+            "rotatingBranchFontSize": 8,
+            "hexagramFontScale": 0.72,
+            "protectionRayReachFactor": 3.0,
+            "mainDialMinSize": 240,
+            "mainDialMaxSize": 540,
+            "horizontalInset": 32,
+            "reverseSections": true,
+            "infoPanelAutoHeight": true,
+            "showPanelToggleButtons": false,
+            "toolbarPlacement": "aboveMainDial",
+            "modeSwitchPlacement": "aboveMainDial",
+            "showScrollbar": false,
+            "toolbarColumns": 6
+          },
+          "desktop": {
+            "layout": "threeColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.6,
+            "zoomStep": 0.1,
+            "panelWidth": 206,
+            "mainDialBaseSize": 60,
+            "mainDialScaleFactor": 540,
+            "infoPanelHeight": 912,
+            "showPanelToggleButtons": true,
+            "toolbarPlacement": "overlay",
+            "modeSwitchPlacement": "overlay",
+            "showScrollbar": true,
+            "toolbarColumns": 4
+          }
+        },
+        "clockScale": 1.3,
+        "mainDialMode": "timeFlow",
+        "visibleRings": [
+          "months",
+          "weeks",
+          "days",
+          "hours",
+          "branchNumbers",
+          "branches",
+          "meridians",
+          "minutes",
+          "seconds"
+        ],
+        "leftDialColumnCollapsed": false,
+        "yuanHuiExpanded": true,
+        "branchMeridianExpanded": true,
+        "protectionExpanded": false,
+        "rightInfoColumnCollapsed": false,
+        "animationDurationSeconds": 10,
+        "hexagramRotation": 0,
+        "titleFontSize": 22.0,
+        "bodyFontSize": 20.0,
+        "smallFontSize": 16.0,
+        "panelTitleFontSize": 18.0,
+        "textFontSize": 22.0,
+        "textFontWeight": 700.0,
+        "accentColorValue": 4294956394,
+        "effectColorValue": 4294034447,
+        "infoPanelTitleColorValue": 4281944491,
+        "panelSpacing": 8.0,
+        "clockHorizontalPadding": 30.0,
+        "containerMargin": 16.0,
+        "containerPadding": 8.0,
+        "highlightStrokeWidth": 6.0,
+        "outlineWidth": 2.0,
+        "animationDurationMs": 220.0,
+        "fontFamily": "Microsoft YaHei",
+        "subtitleColorValue": 4281812815,
+        "subtitleFontSize": 12.0,
+        "subtitleFontWeight": 700.0,
+        "smallDialWidth": 176.0,
+        "smallDialHeight": 210.0
+      }
+    },
+    {
+      "id": "midnightInkDark",
+      "name": "夜墨",
+      "preset": "midnightInk",
+      "mode": "dark",
+      "seedColor": "#263238",
+      "brightness": "dark",
+      "useMaterial3": true,
+      "ui": {
+        "responsive": {
+          "breakpoint": 700,
+          "mobile": {
+            "layout": "singleColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.4,
+            "zoomStep": 0.1,
+            "zoomBaseScale": 1.4,
+            "mainDialAutoHeight": true,
+            "mainDialRadiusFactor": 0.96,
+            "mainDialCaptionFontSize": 16,
+            "hiddenRings": ["months", "weeks", "days", "seconds", "meridians"],
+            "hourRingFontSize": 12,
+            "currentHourRingFontSize": 14,
+            "rotatingGeneralFontSize": 12,
+            "rotatingBranchFontSize": 8,
+            "hexagramFontScale": 0.72,
+            "protectionRayReachFactor": 3.0,
+            "mainDialMinSize": 240,
+            "mainDialMaxSize": 540,
+            "horizontalInset": 32,
+            "reverseSections": true,
+            "infoPanelAutoHeight": true,
+            "showPanelToggleButtons": false,
+            "toolbarPlacement": "aboveMainDial",
+            "modeSwitchPlacement": "aboveMainDial",
+            "showScrollbar": false,
+            "toolbarColumns": 6
+          },
+          "desktop": {
+            "layout": "threeColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.6,
+            "zoomStep": 0.1,
+            "panelWidth": 206,
+            "mainDialBaseSize": 60,
+            "mainDialScaleFactor": 540,
+            "infoPanelHeight": 912,
+            "showPanelToggleButtons": true,
+            "toolbarPlacement": "overlay",
+            "modeSwitchPlacement": "overlay",
+            "showScrollbar": true,
+            "toolbarColumns": 4
+          }
+        },
+        "clock": {
+          "scale": 1.2,
+          "mainDialMode": "timeFlow",
+          "visibleRings": [
+            "months",
+            "days",
+            "hours",
+            "branchNumbers",
+            "branches",
+            "minutes",
+            "seconds"
+          ],
+          "leftDialColumnCollapsed": false,
+          "yuanHuiExpanded": true,
+          "branchMeridianExpanded": true,
+          "protectionExpanded": false,
+          "rightInfoColumnCollapsed": false,
+          "animationDurationSeconds": 10,
+          "hexagramRotation": 0,
+          "animationDurationMs": 220.0
+        },
+        "typography": {
+          "fontFamily": "Microsoft YaHei",
+          "titleFontSize": 22.0,
+          "bodyFontSize": 20.0,
+          "smallFontSize": 16.0,
+          "panelTitleFontSize": 18.0,
+          "textFontSize": 22.0,
+          "textFontWeight": 700.0,
+          "subtitle": {
+            "colorValue": 4281812815,
+            "fontSize": 12.0,
+            "fontWeight": 700.0
+          }
+        },
+        "layout": {
+          "panelSpacing": 8.0,
+          "clockHorizontalPadding": 30.0,
+          "containerMargin": 8.0,
+          "containerPadding": 8.0
+        },
+        "colors": {
+          "accentColorValue": 4294956394,
+          "effectColorValue": 4294034447,
+          "infoPanelTitleColorValue": 4281944491,
+          "highlightStrokeWidth": 6.0,
+          "outlineWidth": 2.0
+        },
+        "smallDial": {
+          "width": 176.0,
+          "height": 210.0
+        }
+      }
+    },
+    {
+      "id": "bambooShadeDark",
+      "name": "竹影",
+      "preset": "bambooShade",
+      "mode": "dark",
+      "seedColor": "#004D40",
+      "brightness": "dark",
+      "useMaterial3": true,
+      "ui": {
+        "responsive": {
+          "breakpoint": 700,
+          "mobile": {
+            "layout": "singleColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.4,
+            "zoomStep": 0.1,
+            "zoomBaseScale": 1.4,
+            "mainDialAutoHeight": true,
+            "mainDialRadiusFactor": 0.96,
+            "mainDialCaptionFontSize": 16,
+            "hiddenRings": ["months", "weeks", "days", "seconds", "meridians"],
+            "hourRingFontSize": 12,
+            "currentHourRingFontSize": 14,
+            "rotatingGeneralFontSize": 12,
+            "rotatingBranchFontSize": 8,
+            "hexagramFontScale": 0.72,
+            "protectionRayReachFactor": 3.0,
+            "mainDialMinSize": 240,
+            "mainDialMaxSize": 540,
+            "horizontalInset": 32,
+            "reverseSections": true,
+            "infoPanelAutoHeight": true,
+            "showPanelToggleButtons": false,
+            "toolbarPlacement": "aboveMainDial",
+            "modeSwitchPlacement": "aboveMainDial",
+            "showScrollbar": false,
+            "toolbarColumns": 6
+          },
+          "desktop": {
+            "layout": "threeColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.6,
+            "zoomStep": 0.1,
+            "panelWidth": 206,
+            "mainDialBaseSize": 60,
+            "mainDialScaleFactor": 540,
+            "infoPanelHeight": 912,
+            "showPanelToggleButtons": true,
+            "toolbarPlacement": "overlay",
+            "modeSwitchPlacement": "overlay",
+            "showScrollbar": true,
+            "toolbarColumns": 4
+          }
+        },
+        "clock": {
+          "scale": 1.4,
+          "mainDialMode": "timeFlow",
+          "visibleRings": [
+            "months",
+            "weeks",
+            "days",
+            "hours",
+            "branchNumbers",
+            "branches",
+            "meridians",
+            "minutes",
+            "seconds"
+          ],
+          "leftDialColumnCollapsed": false,
+          "yuanHuiExpanded": true,
+          "branchMeridianExpanded": true,
+          "protectionExpanded": false,
+          "rightInfoColumnCollapsed": false,
+          "animationDurationSeconds": 10,
+          "hexagramRotation": 0,
+          "animationDurationMs": 220.0
+        },
+        "typography": {
+          "fontFamily": "Microsoft YaHei",
+          "titleFontSize": 22.0,
+          "bodyFontSize": 20.0,
+          "smallFontSize": 16.0,
+          "panelTitleFontSize": 18.0,
+          "textFontSize": 22.0,
+          "textFontWeight": 700.0,
+          "subtitle": {
+            "colorValue": 4281812815,
+            "fontSize": 12.0,
+            "fontWeight": 700.0
+          }
+        },
+        "layout": {
+          "panelSpacing": 8.0,
+          "clockHorizontalPadding": 30.0,
+          "containerMargin": 16.0,
+          "containerPadding": 8.0
+        },
+        "colors": {
+          "accentColorValue": 4294956394,
+          "effectColorValue": 4294034447,
+          "infoPanelTitleColorValue": 4281944491,
+          "highlightStrokeWidth": 6.0,
+          "outlineWidth": 2.0
+        },
+        "smallDial": {
+          "width": 176.0,
+          "height": 210.0
+        }
+      }
+    },
+    {
+      "id": "mobileOptimizedLight",
+      "name": "手机优化",
+      "preset": "mobileOptimized",
+      "mode": "light",
+      "seedColor": "#1976D2",
+      "brightness": "light",
+      "useMaterial3": true,
+      "ui": {
+        "responsive": {
+          "breakpoint": 700,
+          "mobile": {
+            "layout": "singleColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.4,
+            "zoomStep": 0.1,
+            "zoomBaseScale": 1.4,
+            "mainDialAutoHeight": true,
+            "mainDialRadiusFactor": 0.96,
+            "mainDialCaptionFontSize": 16,
+            "hiddenRings": ["months", "weeks", "days", "seconds", "meridians"],
+            "hourRingFontSize": 12,
+            "currentHourRingFontSize": 14,
+            "rotatingGeneralFontSize": 12,
+            "rotatingBranchFontSize": 8,
+            "hexagramFontScale": 0.72,
+            "protectionRayReachFactor": 3.0,
+            "mainDialMinSize": 200,
+            "mainDialMaxSize": 440,
+            "horizontalInset": 24,
+            "reverseSections": true,
+            "infoPanelAutoHeight": true,
+            "showPanelToggleButtons": false,
+            "toolbarPlacement": "aboveMainDial",
+            "modeSwitchPlacement": "aboveMainDial",
+            "showScrollbar": false,
+            "toolbarColumns": 6
+          },
+          "desktop": {
+            "layout": "threeColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.6,
+            "zoomStep": 0.1,
+            "panelWidth": 206,
+            "mainDialBaseSize": 60,
+            "mainDialScaleFactor": 540,
+            "infoPanelHeight": 912,
+            "showPanelToggleButtons": true,
+            "toolbarPlacement": "overlay",
+            "modeSwitchPlacement": "overlay",
+            "showScrollbar": true,
+            "toolbarColumns": 4
+          }
+        },
+        "clock": {
+          "scale": 0.85,
+          "mainDialMode": "timeFlow",
+          "visibleRings": [
+            "hours",
+            "branchNumbers",
+            "branches",
+            "minutes",
+            "seconds"
+          ],
+          "leftDialColumnCollapsed": true,
+          "yuanHuiExpanded": false,
+          "branchMeridianExpanded": true,
+          "protectionExpanded": false,
+          "rightInfoColumnCollapsed": true,
+          "animationDurationSeconds": 10,
+          "hexagramRotation": 0,
+          "animationDurationMs": 220.0
+        },
+        "typography": {
+          "fontFamily": "Microsoft YaHei",
+          "titleFontSize": 16.0,
+          "bodyFontSize": 14.0,
+          "smallFontSize": 12.0,
+          "panelTitleFontSize": 14.0,
+          "textFontSize": 16.0,
+          "textFontWeight": 600.0,
+          "subtitle": {
+            "colorValue": 4281812815,
+            "fontSize": 10.0,
+            "fontWeight": 600.0
+          }
+        },
+        "layout": {
+          "panelSpacing": 4.0,
+          "clockHorizontalPadding": 8.0,
+          "containerMargin": 8.0,
+          "containerPadding": 4.0
+        },
+        "colors": {
+          "accentColorValue": 4294956394,
+          "effectColorValue": 4294034447,
+          "infoPanelTitleColorValue": 4279858898,
+          "highlightStrokeWidth": 3.0,
+          "outlineWidth": 1.5
+        },
+        "smallDial": {
+          "width": 176.0,
+          "height": 210.0
+        }
+      }
+    },
+    {
+      "id": "mobileOptimizedDark",
+      "name": "手机优化·深色",
+      "preset": "mobileOptimized",
+      "mode": "dark",
+      "seedColor": "#1565C0",
+      "brightness": "dark",
+      "useMaterial3": true,
+      "ui": {
+        "responsive": {
+          "breakpoint": 700,
+          "mobile": {
+            "layout": "singleColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.4,
+            "zoomStep": 0.1,
+            "zoomBaseScale": 1.4,
+            "mainDialAutoHeight": true,
+            "mainDialRadiusFactor": 0.96,
+            "mainDialCaptionFontSize": 16,
+            "hiddenRings": ["months", "weeks", "days", "seconds", "meridians"],
+            "hourRingFontSize": 12,
+            "currentHourRingFontSize": 14,
+            "rotatingGeneralFontSize": 12,
+            "rotatingBranchFontSize": 8,
+            "hexagramFontScale": 0.72,
+            "protectionRayReachFactor": 3.0,
+            "mainDialMinSize": 200,
+            "mainDialMaxSize": 440,
+            "horizontalInset": 24,
+            "reverseSections": true,
+            "infoPanelAutoHeight": true,
+            "showPanelToggleButtons": false,
+            "toolbarPlacement": "aboveMainDial",
+            "modeSwitchPlacement": "aboveMainDial",
+            "showScrollbar": false,
+            "toolbarColumns": 6
+          },
+          "desktop": {
+            "layout": "threeColumn",
+            "zoomMinScale": 0.9,
+            "zoomMaxScale": 1.6,
+            "zoomStep": 0.1,
+            "panelWidth": 206,
+            "mainDialBaseSize": 60,
+            "mainDialScaleFactor": 540,
+            "infoPanelHeight": 912,
+            "showPanelToggleButtons": true,
+            "toolbarPlacement": "overlay",
+            "modeSwitchPlacement": "overlay",
+            "showScrollbar": true,
+            "toolbarColumns": 4
+          }
+        },
+        "clock": {
+          "scale": 0.85,
+          "mainDialMode": "timeFlow",
+          "visibleRings": [
+            "hours",
+            "branchNumbers",
+            "branches",
+            "minutes",
+            "seconds"
+          ],
+          "leftDialColumnCollapsed": true,
+          "yuanHuiExpanded": false,
+          "branchMeridianExpanded": true,
+          "protectionExpanded": false,
+          "rightInfoColumnCollapsed": true,
+          "animationDurationSeconds": 10,
+          "hexagramRotation": 0,
+          "animationDurationMs": 220.0
+        },
+        "typography": {
+          "fontFamily": "Microsoft YaHei",
+          "titleFontSize": 16.0,
+          "bodyFontSize": 14.0,
+          "smallFontSize": 12.0,
+          "panelTitleFontSize": 14.0,
+          "textFontSize": 16.0,
+          "textFontWeight": 600.0,
+          "subtitle": {
+            "colorValue": 4289773253,
+            "fontSize": 10.0,
+            "fontWeight": 600.0
+          }
+        },
+        "layout": {
+          "panelSpacing": 4.0,
+          "clockHorizontalPadding": 8.0,
+          "containerMargin": 8.0,
+          "containerPadding": 4.0
+        },
+        "colors": {
+          "accentColorValue": 4294956394,
+          "effectColorValue": 4294034447,
+          "infoPanelTitleColorValue": 4284790262,
+          "highlightStrokeWidth": 3.0,
+          "outlineWidth": 1.5
+        },
+        "smallDial": {
+          "width": 176.0,
+          "height": 210.0
+        }
+      }
+    }
+  ]
+}

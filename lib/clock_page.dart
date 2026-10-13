@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'models/clock_models.dart';
 import 'models/clock_calculations.dart';
+import 'models/theme_model.dart';
 import 'clock_painter.dart';
 import 'widgets/clock_toolbar.dart';
 import 'widgets/clock_header_actions.dart';
@@ -20,14 +21,16 @@ class ClockPage extends StatefulWidget {
     super.key,
     required this.language,
     required this.onLanguageChanged,
-    required this.themeOption,
-    required this.onThemeOptionChanged,
+    required this.theme,
+    required this.themes,
+    required this.onThemeChanged,
   });
 
   final DisplayLanguage language;
   final ValueChanged<DisplayLanguage> onLanguageChanged;
-  final AppThemeOption themeOption;
-  final ValueChanged<AppThemeOption> onThemeOptionChanged;
+  final AppThemeConfig theme;
+  final List<AppThemeConfig> themes;
+  final ValueChanged<String> onThemeChanged;
 
   @override
   State<ClockPage> createState() => _ClockPageState();
@@ -57,10 +60,57 @@ class _ClockPageState extends State<ClockPage>
   Offset? _hexagramDragPosition;
   late DisplayLanguage _language;
   final Set<ClockDialRing> _visibleClockRings = Set.of(ClockDialRing.values);
+  bool? _lastAppliedMobileRingDefaults;
+  String? _lastAppliedRingThemeId;
   late final AnimationController _branchNumberRotationController;
   late final ScrollController _horizontalScrollController;
 
+  double get _smallDialWidthVal => widget.theme.ui.smallDialWidth;
+  double get _smallDialHeightVal => widget.theme.ui.smallDialHeight;
+  Color get _subtitleTextColor =>
+      Color(widget.theme.ui.subtitleColorValue.toInt());
+  double get _subtitleFontSizeVal => widget.theme.ui.subtitleFontSize;
+  FontWeight get _subtitleFontWeight => FontWeight.values.firstWhere(
+    (fontWeight) =>
+        fontWeight.value == widget.theme.ui.subtitleFontWeight.toInt(),
+    orElse: () => FontWeight.bold,
+  );
+
   DateTime _chinaNow() => DateTime.now();
+
+  void _applyDefaultVisibleRings() {
+    final responsive = widget.theme.ui.responsive;
+    final isMobile =
+        MediaQuery.sizeOf(context).width < responsive.breakpoint &&
+        responsive.mobileLayout == 'singleColumn';
+    if (_lastAppliedMobileRingDefaults == isMobile &&
+        _lastAppliedRingThemeId == widget.theme.id) {
+      return;
+    }
+
+    _lastAppliedMobileRingDefaults = isMobile;
+    _lastAppliedRingThemeId = widget.theme.id;
+    _visibleClockRings
+      ..clear()
+      ..addAll(ClockDialRing.values);
+    if (isMobile) {
+      _visibleClockRings.removeAll(responsive.mobileHiddenRingSet);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _applyDefaultVisibleRings();
+  }
+
+  @override
+  void didUpdateWidget(covariant ClockPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.theme.id != widget.theme.id) {
+      _applyDefaultVisibleRings();
+    }
+  }
 
   @override
   void initState() {
@@ -88,11 +138,67 @@ class _ClockPageState extends State<ClockPage>
   @override
   Widget build(BuildContext context) {
     const double leftDialColumnHeight = 4 * 210 + 3 * 24;
-    final double clockContainerSize = 60 + 540 * _clockScale;
-    final double clockVerticalOffset = max(
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final responsive = widget.theme.ui.responsive;
+    final isMobile =
+        viewportWidth < responsive.breakpoint &&
+        responsive.mobileLayout == 'singleColumn';
+    final mobileAvailableDialSize = max(
       0.0,
-      (leftDialColumnHeight - clockContainerSize) / 2,
+      viewportWidth - responsive.mobileHorizontalInset,
     );
+    final mobileDialLimit = min(
+      responsive.mobileMainDialMaxSize,
+      mobileAvailableDialSize,
+    );
+    final mobileDialMinimum = min(
+      responsive.mobileMainDialMinSize,
+      mobileDialLimit,
+    );
+    final mobileScaledDialSize =
+        mobileDialLimit * (_clockScale / responsive.mobileZoomBaseScale);
+    final double clockContainerSize = isMobile
+        ? min(mobileDialLimit, max(mobileDialMinimum, mobileScaledDialSize))
+        : responsive.desktopMainDialBaseSize +
+              responsive.desktopMainDialScaleFactor * _clockScale;
+    final zoomMinScale = isMobile
+        ? responsive.mobileZoomMinScale
+        : responsive.desktopZoomMinScale;
+    final zoomMaxScale = isMobile
+        ? responsive.mobileZoomMaxScale
+        : responsive.desktopZoomMaxScale;
+    final zoomStep = isMobile
+        ? responsive.mobileZoomStep
+        : responsive.desktopZoomStep;
+    final canZoomIn = isMobile
+        ? _clockScale < zoomMaxScale &&
+              clockContainerSize < mobileDialLimit - 0.5
+        : _clockScale < zoomMaxScale;
+    final canZoomOut = isMobile
+        ? _clockScale > zoomMinScale &&
+              clockContainerSize > mobileDialMinimum + 0.5
+        : _clockScale > zoomMinScale;
+    final bool useMobileLayout = isMobile;
+    final double clockVerticalOffset = useMobileLayout
+        ? 0
+        : max(0.0, (leftDialColumnHeight - clockContainerSize) / 2);
+    final double rightPanelWidth = useMobileLayout
+        ? viewportWidth - responsive.mobileHorizontalInset
+        : responsive.desktopPanelWidth;
+    final bool singleColumn = useMobileLayout;
+    final bool infoPanelAutoHeight =
+        singleColumn && responsive.mobileInfoPanelAutoHeight;
+    final bool showScrollbar = singleColumn
+        ? responsive.mobileShowScrollbar
+        : responsive.desktopShowScrollbar;
+    final bool threeColumnLayout =
+        !singleColumn && responsive.desktopLayout == 'threeColumn';
+    final displayThemes = widget.themes
+        .where((theme) => theme.isMobileOptimized == isMobile)
+        .toList(growable: false);
+    final modeSwitchPlacement = useMobileLayout
+        ? responsive.mobileModeSwitchPlacement
+        : responsive.desktopModeSwitchPlacement;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -100,13 +206,16 @@ class _ClockPageState extends State<ClockPage>
         child: Center(
           child: Scrollbar(
             controller: _horizontalScrollController,
-            thumbVisibility: true,
-            trackVisibility: true,
+            thumbVisibility: showScrollbar,
+            trackVisibility: showScrollbar,
             child: SingleChildScrollView(
               controller: _horizontalScrollController,
-              scrollDirection: Axis.horizontal,
+              scrollDirection: threeColumnLayout
+                  ? Axis.horizontal
+                  : Axis.vertical,
               child: Center(
                 child: Container(
+                  width: singleColumn ? viewportWidth : null,
                   margin: const EdgeInsets.all(8),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -116,12 +225,26 @@ class _ClockPageState extends State<ClockPage>
                     ),
                   ),
                   child: Scrollbar(
+                    notificationPredicate: (notification) =>
+                        !singleColumn && notification.depth == 0,
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
                         SingleChildScrollView(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          physics: singleColumn
+                              ? const NeverScrollableScrollPhysics()
+                              : null,
+                          child: Flex(
+                            direction: threeColumnLayout
+                                ? Axis.horizontal
+                                : Axis.vertical,
+                            crossAxisAlignment: singleColumn
+                                ? CrossAxisAlignment.center
+                                : CrossAxisAlignment.start,
+                            verticalDirection:
+                                singleColumn && responsive.mobileReverseSections
+                                ? VerticalDirection.up
+                                : VerticalDirection.down,
                             children: [
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,8 +253,12 @@ class _ClockPageState extends State<ClockPage>
                                     key: const ValueKey('left_panel_container'),
                                     duration: const Duration(milliseconds: 220),
                                     curve: Curves.easeInOut,
-                                    width: 206,
-                                    alignment: Alignment.centerLeft,
+                                    width: singleColumn
+                                        ? rightPanelWidth
+                                        : responsive.desktopPanelWidth,
+                                    alignment: singleColumn
+                                        ? Alignment.center
+                                        : Alignment.centerLeft,
                                     child: AnimatedOpacity(
                                       duration: const Duration(
                                         milliseconds: 180,
@@ -141,7 +268,7 @@ class _ClockPageState extends State<ClockPage>
                                       child: IgnorePointer(
                                         ignoring: _leftDialColumnCollapsed,
                                         child: SizedBox(
-                                          width: 206,
+                                          width: responsive.desktopPanelWidth,
                                           child: SmallDialColumn(
                                             children: [
                                               _buildPlaceholderBranchDial(_now),
@@ -167,14 +294,26 @@ class _ClockPageState extends State<ClockPage>
                               Padding(
                                 padding: EdgeInsets.zero,
                                 child: SizedBox(
-                                  width: clockContainerSize + 60,
-                                  height:
+                                  width:
                                       clockContainerSize +
-                                      clockVerticalOffset +
-                                      80,
+                                      (singleColumn
+                                          ? 0
+                                          : responsive.desktopMainDialBaseSize),
+                                  height:
+                                      singleColumn &&
+                                          responsive.mobileMainDialAutoHeight
+                                      ? null
+                                      : clockContainerSize +
+                                            clockVerticalOffset +
+                                            80,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 30,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: singleColumn
+                                          ? 0
+                                          : widget
+                                                .theme
+                                                .ui
+                                                .clockHorizontalPadding,
                                     ),
                                     child: SizedBox(
                                       width: clockContainerSize,
@@ -183,6 +322,18 @@ class _ClockPageState extends State<ClockPage>
                                         crossAxisAlignment:
                                             CrossAxisAlignment.center,
                                         children: [
+                                          if (singleColumn &&
+                                              modeSwitchPlacement ==
+                                                  'aboveMainDial')
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 8,
+                                              ),
+                                              child: _buildMainDialTabs(
+                                                context,
+                                                width: clockContainerSize,
+                                              ),
+                                            ),
                                           SizedBox(
                                             width: clockContainerSize,
                                             height:
@@ -195,6 +346,9 @@ class _ClockPageState extends State<ClockPage>
                                                   top: clockVerticalOffset,
                                                   left: 0,
                                                   child: SizedBox.square(
+                                                    key: const ValueKey(
+                                                      'main_dial_face',
+                                                    ),
                                                     dimension:
                                                         clockContainerSize,
                                                     child: LayoutBuilder(
@@ -361,18 +515,24 @@ class _ClockPageState extends State<ClockPage>
                                                     ),
                                                   ),
                                                 ),
-                                                Positioned(
-                                                  top: 0,
-                                                  right: 0,
-                                                  child: _buildMainDialTabs(
-                                                    context,
+                                                if (!singleColumn &&
+                                                    modeSwitchPlacement ==
+                                                        'overlay')
+                                                  Positioned(
+                                                    top: 0,
+                                                    right: 0,
+                                                    child: _buildMainDialTabs(
+                                                      context,
+                                                    ),
                                                   ),
-                                                ),
                                               ],
                                             ),
                                           ),
                                           const SizedBox(height: 18),
                                           Text(
+                                            key: const ValueKey(
+                                              'main_dial_caption',
+                                            ),
                                             _mainDialMode ==
                                                     MainDialMode.timeFlow
                                                 ? _formatTime(_now)
@@ -382,8 +542,11 @@ class _ClockPageState extends State<ClockPage>
                                                     '64卦盤',
                                                   ),
                                             textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              fontSize: 22,
+                                            style: TextStyle(
+                                              fontSize: singleColumn
+                                                  ? responsive
+                                                        .mobileMainDialCaptionFontSize
+                                                  : 22,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.indigo,
                                             ),
@@ -394,424 +557,468 @@ class _ClockPageState extends State<ClockPage>
                                   ),
                                 ),
                               ),
-                              AnimatedContainer(
+                              if (singleColumn &&
+                                  responsive.mobileToolbarPlacement ==
+                                      'aboveMainDial')
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  child: _buildRightToolbar(
+                                    context,
+                                    showPanelToggleButtons:
+                                        responsive.mobileShowPanelToggleButtons,
+                                    toolbarColumns:
+                                        responsive.mobileToolbarColumns,
+                                    toolbarWidth: rightPanelWidth,
+                                    canZoomIn: canZoomIn,
+                                    canZoomOut: canZoomOut,
+                                    zoomStep: zoomStep,
+                                    zoomMinScale: zoomMinScale,
+                                    zoomMaxScale: zoomMaxScale,
+                                  ),
+                                ),
+                              AnimatedSize(
                                 duration: const Duration(milliseconds: 220),
                                 curve: Curves.easeInOut,
-                                width: 206,
-                                height: leftDialColumnHeight,
-                                decoration: const BoxDecoration(),
-                                clipBehavior: Clip.hardEdge,
-                                child: AnimatedOpacity(
-                                  duration: const Duration(milliseconds: 180),
-                                  opacity: _rightInfoColumnCollapsed ? 0 : 1,
-                                  child: IgnorePointer(
-                                    ignoring: _rightInfoColumnCollapsed,
-                                    child: SizedBox(
-                                      width: 206,
-                                      height: leftDialColumnHeight,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Expanded(
-                                            child: SingleChildScrollView(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Expanded(
-                                                        child: Text(
-                                                          _localized(
-                                                            '时间旋流',
-                                                            'Time Flow',
-                                                            '時間の流転',
+                                alignment: Alignment.topCenter,
+                                child: Container(
+                                  width: rightPanelWidth,
+                                  height: infoPanelAutoHeight
+                                      ? null
+                                      : responsive.desktopInfoPanelHeight,
+                                  decoration: const BoxDecoration(),
+                                  clipBehavior: Clip.hardEdge,
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 180),
+                                    opacity: _rightInfoColumnCollapsed ? 0 : 1,
+                                    child: IgnorePointer(
+                                      ignoring: _rightInfoColumnCollapsed,
+                                      child: SizedBox(
+                                        width: rightPanelWidth,
+                                        height: infoPanelAutoHeight
+                                            ? null
+                                            : responsive.desktopInfoPanelHeight,
+                                        child: Column(
+                                          mainAxisSize: infoPanelAutoHeight
+                                              ? MainAxisSize.min
+                                              : MainAxisSize.max,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Flexible(
+                                              fit: infoPanelAutoHeight
+                                                  ? FlexFit.loose
+                                                  : FlexFit.tight,
+                                              child: SingleChildScrollView(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Expanded(
+                                                          child: Text(
+                                                            _localized(
+                                                              '时间旋流',
+                                                              'Time Flow',
+                                                              '時間の流転',
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Theme.of(
+                                                                        context,
+                                                                      )
+                                                                      .colorScheme
+                                                                      .primary,
+                                                              fontSize: 22,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
                                                           ),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
+                                                        ),
+                                                        ClockHeaderActions(
+                                                          language: _language,
+                                                          themeId:
+                                                              widget.theme.id,
+                                                          themes: displayThemes,
+                                                          onLanguageSelected:
+                                                              (language) {
+                                                                setState(
+                                                                  () => _language =
+                                                                      language,
+                                                                );
+                                                                widget
+                                                                    .onLanguageChanged(
+                                                                      language,
+                                                                    );
+                                                              },
+                                                          onThemeSelected: widget
+                                                              .onThemeChanged,
+                                                          languageTooltip:
+                                                              _localized(
+                                                                '切换语言',
+                                                                'Change language',
+                                                                '言語を切り替え',
+                                                              ),
+                                                          themeTooltip: _localized(
+                                                            '选择主题',
+                                                            'Choose theme',
+                                                            'テーマを選択',
+                                                            traditionalChinese:
+                                                                '選擇主題',
+                                                          ),
+                                                          themeLabel:
+                                                              _themeOptionLabel,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 20),
+                                                    InkWell(
+                                                      onTap: () => setState(
+                                                        () => _yuanHuiExpanded =
+                                                            !_yuanHuiExpanded,
+                                                      ),
+                                                      child: SizedBox(
+                                                        width: rightPanelWidth,
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Expanded(
+                                                              child: Row(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
+                                                                  Icon(
+                                                                    Icons
+                                                                        .circle,
+                                                                    size: 6,
+                                                                    color: Theme.of(
+                                                                      context,
+                                                                    ).colorScheme.primary,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    width: 6,
+                                                                  ),
+                                                                  Flexible(
+                                                                    child: Text(
+                                                                      _localized(
+                                                                        '元会运世',
+                                                                        'Yuan Hui Yun Shi',
+                                                                        '元会運世',
+                                                                      ),
+                                                                      maxLines:
+                                                                          2,
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
+                                                                      style: TextStyle(
+                                                                        color: Theme.of(
+                                                                          context,
+                                                                        ).colorScheme.onSurface,
+                                                                        fontSize:
+                                                                            16,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            Icon(
+                                                              _yuanHuiExpanded
+                                                                  ? Icons
+                                                                        .expand_less
+                                                                  : Icons
+                                                                        .expand_more,
+                                                              size: 20,
+                                                              color: Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSurfaceVariant,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    if (_yuanHuiExpanded) ...[
+                                                      const SizedBox(height: 8),
+                                                      Text(
+                                                        _localized(
+                                                          '以《皇极经世》中的方式记录时间旋流，一元为129600年。\n一元含十二会，\n一会含三十运，\n一运含十二世，\n一世为三十年。\n当前日甲一元范围：\n公元前67046年~公元62553年',
+                                                          'Time flows according to the Huangji Jingshi cycle. One yuan is 129,600 years.\nOne yuan contains twelve hui,\none hui contains thirty yun,\none yun contains twelve shi,\none shi contains thirty years.\nCurrent Yuan 1:\n67046 BCE - 62553 CE',
+                                                          '『皇極経世』に基づき時間の流転を記録します。一元は129,600年です。\n一元は十二会、\n一会は三十運、\n一運は十二世、\n一世は三十年です。\n現在の日甲一元の範囲：\n紀元前67046年〜西暦62553年',
+                                                        ),
+                                                        style: TextStyle(
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                          fontSize: 13,
+                                                          height: 1.6,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                    const SizedBox(height: 24),
+                                                    InkWell(
+                                                      onTap: () => setState(
+                                                        () => _branchMeridianExpanded =
+                                                            !_branchMeridianExpanded,
+                                                      ),
+                                                      child: SizedBox(
+                                                        width: rightPanelWidth,
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Expanded(
+                                                              child: Row(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
+                                                                  Icon(
+                                                                    Icons
+                                                                        .circle,
+                                                                    size: 6,
+                                                                    color: Theme.of(
+                                                                      context,
+                                                                    ).colorScheme.primary,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    width: 6,
+                                                                  ),
+                                                                  Flexible(
+                                                                    child: Text(
+                                                                      _localized(
+                                                                        '地支经络',
+                                                                        'Earthly Branches and Meridians',
+                                                                        '地支と経絡',
+                                                                      ),
+                                                                      softWrap:
+                                                                          true,
+                                                                      maxLines:
+                                                                          2,
+                                                                      style: TextStyle(
+                                                                        color: Theme.of(
+                                                                          context,
+                                                                        ).colorScheme.onSurface,
+                                                                        fontSize:
+                                                                            16,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            Icon(
+                                                              _branchMeridianExpanded
+                                                                  ? Icons
+                                                                        .expand_less
+                                                                  : Icons
+                                                                        .expand_more,
+                                                              size: 20,
+                                                              color: Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSurfaceVariant,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    if (_branchMeridianExpanded) ...[
+                                                      const SizedBox(height: 8),
+                                                      Text(
+                                                        _localized(
+                                                          '地支时辰圈以十二地支划分昼夜时辰，经络圈对应十二时辰的经络运行节律。两圈由同一时刻同步旋转，展示时辰与经络的对应关系。',
+                                                          'The earthly-branch ring divides the day into twelve double-hours. The meridian ring shows the meridian rhythm associated with those periods. Both rings rotate with the same time reference.',
+                                                          '地支時辰の環は十二地支で一日を十二の時辰に分け、経絡の環は各時辰に対応する経絡のリズムを示します。両方の環は同じ時刻を基準に連動します。',
+                                                        ),
+                                                        style: TextStyle(
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                          fontSize: 13,
+                                                          height: 1.6,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                    const SizedBox(height: 24),
+                                                    InkWell(
+                                                      onTap: () => setState(
+                                                        () => _protectionExpanded =
+                                                            !_protectionExpanded,
+                                                      ),
+                                                      child: SizedBox(
+                                                        width: rightPanelWidth,
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Expanded(
+                                                              child: Row(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
+                                                                  Icon(
+                                                                    Icons
+                                                                        .circle,
+                                                                    size: 6,
+                                                                    color: Theme.of(
+                                                                      context,
+                                                                    ).colorScheme.primary,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    width: 6,
+                                                                  ),
+                                                                  Flexible(
+                                                                    child: Text(
+                                                                      _localized(
+                                                                        '大将守护',
+                                                                        'General Protection',
+                                                                        '大将の守護',
+                                                                      ),
+                                                                      maxLines:
+                                                                          2,
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
+                                                                      style: TextStyle(
+                                                                        color: Theme.of(
+                                                                          context,
+                                                                        ).colorScheme.onSurface,
+                                                                        fontSize:
+                                                                            16,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            Icon(
+                                                              _protectionExpanded
+                                                                  ? Icons
+                                                                        .expand_less
+                                                                  : Icons
+                                                                        .expand_more,
+                                                              size: 20,
+                                                              color: Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSurfaceVariant,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    if (_protectionExpanded) ...[
+                                                      const SizedBox(height: 8),
+                                                      Text(
+                                                        _localized(
+                                                          '十二药叉大将源自于唐三藏法师玄奘所译《药师琉璃光如来本愿功德经》，发愿卫护饶益流布此经及受持此如来名号之一切有情众生。在旋流守护时，请持续恭敬念诵：\n南无药师琉璃光如来！\n\n也可以依次恭敬念诵十二药叉大将的名号：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
+                                                          'The Twelve Yaksha Generals are described in the Bhaiṣajyaguru Vaidūryaprabharāja Sūtra translated by Xuanzang. During the rotation, respectfully recite:\nNamo Bhaiṣajyaguru Vaidūryaprabharāja Tathāgata!\n\nThe Twelve Yaksha Generals:\nKumbhira\nVajra\nMihira\nAndira\nAnila\nSandila\nIndra\nPajra\nMahoraga\nCandala\nCatura\nVikala',
+                                                          '十二薬叉大将は、玄奘訳『薬師瑠璃光如来本願功徳経』に説かれます。旋流守護の間、敬意をもって念誦してください。\n南無薬師瑠璃光如来！\n\n十二薬叉大将：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
+                                                        ),
+                                                        style: TextStyle(
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                          fontSize: 13,
+                                                          height: 1.6,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                    const SizedBox(height: 24),
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.circle,
+                                                          size: 6,
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).colorScheme.primary,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        Text(
+                                                          _localized(
+                                                            '信息',
+                                                            'Information',
+                                                            '情報',
+                                                          ),
                                                           style: TextStyle(
                                                             color:
                                                                 Theme.of(
                                                                       context,
                                                                     )
                                                                     .colorScheme
-                                                                    .primary,
-                                                            fontSize: 22,
+                                                                    .onSurface,
+                                                            fontSize: 16,
                                                             fontWeight:
                                                                 FontWeight.bold,
                                                           ),
                                                         ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    Text(
+                                                      _localized(
+                                                        '时间旋流是一个以时间为轴，探索元会运世、地支时辰与经络对应关系的 Flutter 示例工程。',
+                                                        'Time Flow is a Flutter sample project exploring the relationships between Yuan Hui Yun Shi, earthly branches, and meridians through time.',
+                                                        '時間旋流は、時間を軸に元会運世、地支時辰、経絡の対応関係を探る Flutter サンプルプロジェクトです。',
                                                       ),
-                                                      ClockHeaderActions(
-                                                        language: _language,
-                                                        themeOption:
-                                                            widget.themeOption,
-                                                        onLanguageSelected:
-                                                            (language) {
-                                                              setState(
-                                                                () => _language =
-                                                                    language,
-                                                              );
-                                                              widget
-                                                                  .onLanguageChanged(
-                                                                    language,
-                                                                  );
-                                                            },
-                                                        onThemeSelected: widget
-                                                            .onThemeOptionChanged,
-                                                        languageTooltip:
-                                                            _localized(
-                                                              '切换语言',
-                                                              'Change language',
-                                                              '言語を切り替え',
-                                                            ),
-                                                        themeTooltip: _localized(
-                                                          '选择主题',
-                                                          'Choose theme',
-                                                          'テーマを選択',
-                                                          traditionalChinese:
-                                                              '選擇主題',
+                                                      style: TextStyle(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                        fontSize: 13,
+                                                        height: 1.6,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    InkWell(
+                                                      onTap: () => launchUrl(
+                                                        Uri.parse(
+                                                          'https://github.com/buguyizu/flutter_application_1',
                                                         ),
-                                                        themeLabel:
-                                                            _themeOptionLabel,
                                                       ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 20),
-                                                  InkWell(
-                                                    onTap: () => setState(
-                                                      () => _yuanHuiExpanded =
-                                                          !_yuanHuiExpanded,
-                                                    ),
-                                                    child: SizedBox(
-                                                      width: 206,
-                                                      child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          Expanded(
-                                                            child: Row(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: [
-                                                                Icon(
-                                                                  Icons.circle,
-                                                                  size: 6,
-                                                                  color: Theme.of(
-                                                                    context,
-                                                                  ).colorScheme.primary,
-                                                                ),
-                                                                const SizedBox(
-                                                                  width: 6,
-                                                                ),
-                                                                Flexible(
-                                                                  child: Text(
-                                                                    _localized(
-                                                                      '元会运世',
-                                                                      'Yuan Hui Yun Shi',
-                                                                      '元会運世',
-                                                                    ),
-                                                                    maxLines: 2,
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .ellipsis,
-                                                                    style: TextStyle(
-                                                                      color: Theme.of(
-                                                                        context,
-                                                                      ).colorScheme.onSurface,
-                                                                      fontSize:
-                                                                          16,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                          Icon(
-                                                            _yuanHuiExpanded
-                                                                ? Icons
-                                                                      .expand_less
-                                                                : Icons
-                                                                      .expand_more,
-                                                            size: 20,
-                                                            color: Theme.of(context)
-                                                                .colorScheme
-                                                                .onSurfaceVariant,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (_yuanHuiExpanded) ...[
-                                                    const SizedBox(height: 8),
-                                                    Text(
-                                                      _localized(
-                                                        '以《皇极经世》中的方式记录时间旋流，一元为129600年。\n一元含十二会，\n一会含三十运，\n一运含十二世，\n一世为三十年。\n当前日甲一元范围：\n公元前67046年~公元62553年',
-                                                        'Time flows according to the Huangji Jingshi cycle. One yuan is 129,600 years.\nOne yuan contains twelve hui,\none hui contains thirty yun,\none yun contains twelve shi,\none shi contains thirty years.\nCurrent Yuan 1:\n67046 BCE - 62553 CE',
-                                                        '『皇極経世』に基づき時間の流転を記録します。一元は129,600年です。\n一元は十二会、\n一会は三十運、\n一運は十二世、\n一世は三十年です。\n現在の日甲一元の範囲：\n紀元前67046年〜西暦62553年',
-                                                      ),
-                                                      style: TextStyle(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant,
-                                                        fontSize: 13,
-                                                        height: 1.6,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                  const SizedBox(height: 24),
-                                                  InkWell(
-                                                    onTap: () => setState(
-                                                      () => _branchMeridianExpanded =
-                                                          !_branchMeridianExpanded,
-                                                    ),
-                                                    child: SizedBox(
-                                                      width: 206,
-                                                      child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          Expanded(
-                                                            child: Row(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: [
-                                                                Icon(
-                                                                  Icons.circle,
-                                                                  size: 6,
-                                                                  color: Theme.of(
-                                                                    context,
-                                                                  ).colorScheme.primary,
-                                                                ),
-                                                                const SizedBox(
-                                                                  width: 6,
-                                                                ),
-                                                                Flexible(
-                                                                  child: Text(
-                                                                    _localized(
-                                                                      '地支经络',
-                                                                      'Earthly Branches and Meridians',
-                                                                      '地支と経絡',
-                                                                    ),
-                                                                    softWrap:
-                                                                        true,
-                                                                    maxLines: 2,
-                                                                    style: TextStyle(
-                                                                      color: Theme.of(
-                                                                        context,
-                                                                      ).colorScheme.onSurface,
-                                                                      fontSize:
-                                                                          16,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                          Icon(
-                                                            _branchMeridianExpanded
-                                                                ? Icons
-                                                                      .expand_less
-                                                                : Icons
-                                                                      .expand_more,
-                                                            size: 20,
-                                                            color: Theme.of(context)
-                                                                .colorScheme
-                                                                .onSurfaceVariant,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (_branchMeridianExpanded) ...[
-                                                    const SizedBox(height: 8),
-                                                    Text(
-                                                      _localized(
-                                                        '地支时辰圈以十二地支划分昼夜时辰，经络圈对应十二时辰的经络运行节律。两圈由同一时刻同步旋转，展示时辰与经络的对应关系。',
-                                                        'The earthly-branch ring divides the day into twelve double-hours. The meridian ring shows the meridian rhythm associated with those periods. Both rings rotate with the same time reference.',
-                                                        '地支時辰の環は十二地支で一日を十二の時辰に分け、経絡の環は各時辰に対応する経絡のリズムを示します。両方の環は同じ時刻を基準に連動します。',
-                                                      ),
-                                                      style: TextStyle(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant,
-                                                        fontSize: 13,
-                                                        height: 1.6,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                  const SizedBox(height: 24),
-                                                  InkWell(
-                                                    onTap: () => setState(
-                                                      () => _protectionExpanded =
-                                                          !_protectionExpanded,
-                                                    ),
-                                                    child: SizedBox(
-                                                      width: 206,
-                                                      child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          Expanded(
-                                                            child: Row(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: [
-                                                                Icon(
-                                                                  Icons.circle,
-                                                                  size: 6,
-                                                                  color: Theme.of(
-                                                                    context,
-                                                                  ).colorScheme.primary,
-                                                                ),
-                                                                const SizedBox(
-                                                                  width: 6,
-                                                                ),
-                                                                Flexible(
-                                                                  child: Text(
-                                                                    _localized(
-                                                                      '大将守护',
-                                                                      'General Protection',
-                                                                      '大将の守護',
-                                                                    ),
-                                                                    maxLines: 2,
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .ellipsis,
-                                                                    style: TextStyle(
-                                                                      color: Theme.of(
-                                                                        context,
-                                                                      ).colorScheme.onSurface,
-                                                                      fontSize:
-                                                                          16,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                          Icon(
-                                                            _protectionExpanded
-                                                                ? Icons
-                                                                      .expand_less
-                                                                : Icons
-                                                                      .expand_more,
-                                                            size: 20,
-                                                            color: Theme.of(context)
-                                                                .colorScheme
-                                                                .onSurfaceVariant,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (_protectionExpanded) ...[
-                                                    const SizedBox(height: 8),
-                                                    Text(
-                                                      _localized(
-                                                        '十二药叉大将源自于唐三藏法师玄奘所译《药师琉璃光如来本愿功德经》，发愿卫护饶益流布此经及受持此如来名号之一切有情众生。在旋流守护时，请持续恭敬念诵：\n南无药师琉璃光如来！\n\n也可以依次恭敬念诵十二药叉大将的名号：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
-                                                        'The Twelve Yaksha Generals are described in the Bhaiṣajyaguru Vaidūryaprabharāja Sūtra translated by Xuanzang. During the rotation, respectfully recite:\nNamo Bhaiṣajyaguru Vaidūryaprabharāja Tathāgata!\n\nThe Twelve Yaksha Generals:\nKumbhira\nVajra\nMihira\nAndira\nAnila\nSandila\nIndra\nPajra\nMahoraga\nCandala\nCatura\nVikala',
-                                                        '十二薬叉大将は、玄奘訳『薬師瑠璃光如来本願功徳経』に説かれます。旋流守護の間、敬意をもって念誦してください。\n南無薬師瑠璃光如来！\n\n十二薬叉大将：\n官毗罗大将\n伐折罗大将\n迷企罗大将\n安底罗大将\n頞你罗大将\n珊底罗大将\n因达罗大将\n披夷罗大将\n摩虎罗大将\n真达罗大将\n招杜罗大将\n毗羯罗大将',
-                                                      ),
-                                                      style: TextStyle(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant,
-                                                        fontSize: 13,
-                                                        height: 1.6,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                  const SizedBox(height: 24),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.circle,
-                                                        size: 6,
-                                                        color: Theme.of(
-                                                          context,
-                                                        ).colorScheme.primary,
-                                                      ),
-                                                      const SizedBox(width: 6),
-                                                      Text(
-                                                        _localized(
-                                                          '信息',
-                                                          'Information',
-                                                          '情報',
-                                                        ),
+                                                      child: Text(
+                                                        '${_localized('工程目录：', 'Project: ', 'プロジェクト：')}GitHub',
                                                         style: TextStyle(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .colorScheme
-                                                                  .onSurface,
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.bold,
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).colorScheme.primary,
+                                                          decoration:
+                                                              TextDecoration
+                                                                  .underline,
+                                                          fontSize: 13,
+                                                          height: 1.5,
                                                         ),
                                                       ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Text(
-                                                    _localized(
-                                                      '时间旋流是一个以时间为轴，探索元会运世、地支时辰与经络对应关系的 Flutter 示例工程。',
-                                                      'Time Flow is a Flutter sample project exploring the relationships between Yuan Hui Yun Shi, earthly branches, and meridians through time.',
-                                                      '時間旋流は、時間を軸に元会運世、地支時辰、経絡の対応関係を探る Flutter サンプルプロジェクトです。',
                                                     ),
-                                                    style: TextStyle(
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurfaceVariant,
-                                                      fontSize: 13,
-                                                      height: 1.6,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  InkWell(
-                                                    onTap: () => launchUrl(
-                                                      Uri.parse(
-                                                        'https://github.com/buguyizu/flutter_application_1',
-                                                      ),
-                                                    ),
-                                                    child: Text(
-                                                      '${_localized('工程目录：', 'Project: ', 'プロジェクト：')}GitHub',
-                                                      style: TextStyle(
-                                                        color: Theme.of(
-                                                          context,
-                                                        ).colorScheme.primary,
-                                                        decoration:
-                                                            TextDecoration
-                                                                .underline,
-                                                        fontSize: 13,
-                                                        height: 1.5,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -820,11 +1027,23 @@ class _ClockPageState extends State<ClockPage>
                             ],
                           ),
                         ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: _buildRightToolbar(context),
-                        ),
+                        if (!singleColumn &&
+                            responsive.desktopToolbarPlacement == 'overlay')
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: _buildRightToolbar(
+                              context,
+                              showPanelToggleButtons:
+                                  responsive.desktopShowPanelToggleButtons,
+                              toolbarColumns: responsive.desktopToolbarColumns,
+                              canZoomIn: canZoomIn,
+                              canZoomOut: canZoomOut,
+                              zoomStep: zoomStep,
+                              zoomMinScale: zoomMinScale,
+                              zoomMaxScale: zoomMaxScale,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -838,6 +1057,13 @@ class _ClockPageState extends State<ClockPage>
   }
 
   Widget _buildClockCanvas(BoxConstraints constraints) {
+    final responsive = widget.theme.ui.responsive;
+    final isMobile =
+        MediaQuery.sizeOf(context).width < responsive.breakpoint &&
+        responsive.mobileLayout == 'singleColumn';
+    final hourBaseFactor = isMobile
+        ? responsive.mobileMainDialRadiusFactor
+        : ClockRadiusFactors.hourBase;
     return Stack(
       fit: StackFit.expand,
       clipBehavior: Clip.none,
@@ -853,6 +1079,20 @@ class _ClockPageState extends State<ClockPage>
                 _branchNumberRotationController.isAnimating,
             branchNumbersRotation:
                 _branchNumberRotationController.value * 2 * pi,
+            hourRingFontSize: isMobile ? responsive.mobileHourRingFontSize : 20,
+            currentHourRingFontSize: isMobile
+                ? responsive.mobileCurrentHourRingFontSize
+                : 22,
+            rotatingGeneralFontSize: isMobile
+                ? responsive.mobileRotatingGeneralFontSize
+                : 16,
+            rotatingBranchFontSize: isMobile
+                ? responsive.mobileRotatingBranchFontSize
+                : 12,
+            hourBaseFactor: hourBaseFactor,
+            protectionRayReachFactor: isMobile
+                ? responsive.mobileProtectionRayReachFactor
+                : 1.41421356237,
           ),
           size: const Size.square(200),
         ),
@@ -901,17 +1141,34 @@ class _ClockPageState extends State<ClockPage>
 
   Widget _buildActiveDialCanvas(BoxConstraints constraints) {
     if (_mainDialMode == MainDialMode.hexagrams) {
+      final responsive = widget.theme.ui.responsive;
+      final isMobile =
+          MediaQuery.sizeOf(context).width < responsive.breakpoint &&
+          responsive.mobileLayout == 'singleColumn';
       return CustomPaint(
         painter: HexagramDialPlaceholderPainter(
           colorScheme: Theme.of(context).colorScheme,
           rotation: _hexagramRotation,
+          fontScale: isMobile ? responsive.mobileHexagramFontScale : 1,
+          currentYear: _now.year,
+          showSovereignHuiLabels: _hoveredBranchIndex != null,
         ),
       );
     }
     return _buildClockCanvas(constraints);
   }
 
-  Widget _buildRightToolbar(BuildContext context) {
+  Widget _buildRightToolbar(
+    BuildContext context, {
+    required bool showPanelToggleButtons,
+    required int toolbarColumns,
+    required bool canZoomIn,
+    required bool canZoomOut,
+    required double zoomStep,
+    required double zoomMinScale,
+    required double zoomMaxScale,
+    double toolbarWidth = 166,
+  }) {
     final buttonShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(10),
     );
@@ -957,7 +1214,13 @@ class _ClockPageState extends State<ClockPage>
         context,
         icon: Icons.add,
         tooltip: _localized('放大大盘', 'Zoom in', '大盤を拡大'),
-        onPressed: _clockScale >= 1.8 ? null : () => _changeClockScale(0.1),
+        onPressed: canZoomIn
+            ? () => _changeClockScale(
+                zoomStep,
+                minScale: zoomMinScale,
+                maxScale: zoomMaxScale,
+              )
+            : null,
       ),
       buildActionButton(
         Icon(
@@ -976,7 +1239,13 @@ class _ClockPageState extends State<ClockPage>
         context,
         icon: Icons.remove,
         tooltip: _localized('缩小大盘', 'Zoom out', '大盤を縮小'),
-        onPressed: _clockScale <= 0.7 ? null : () => _changeClockScale(-0.1),
+        onPressed: canZoomOut
+            ? () => _changeClockScale(
+                -zoomStep,
+                minScale: zoomMinScale,
+                maxScale: zoomMaxScale,
+              )
+            : null,
       ),
       buildActionButton(
         Icon(
@@ -1036,20 +1305,22 @@ class _ClockPageState extends State<ClockPage>
       ),
     ];
     return ClockToolbar(
+      crossAxisCount: toolbarColumns,
+      width: toolbarWidth,
       children: [
         buttons[0],
         buttons[2],
         buttons[4],
         buttons[6],
-        buttons[1],
-        buttons[3],
+        if (showPanelToggleButtons) buttons[1],
+        if (showPanelToggleButtons) buttons[3],
         buttons[5],
         buttons[7],
       ],
     );
   }
 
-  Widget _buildMainDialTabs(BuildContext context) {
+  Widget _buildMainDialTabs(BuildContext context, {double width = 206}) {
     final activeColor = Theme.of(context).colorScheme.primary;
     final inactiveColor = Theme.of(context).colorScheme.surfaceContainerHighest;
 
@@ -1101,18 +1372,18 @@ class _ClockPageState extends State<ClockPage>
     }
 
     return SizedBox(
-      width: 206,
+      width: width,
       child: Row(
         mainAxisSize: MainAxisSize.max,
         children: [
-          Flexible(
+          Expanded(
             child: buildTab(
               MainDialMode.timeFlow,
               _localized('日盘', 'Day dial', '日盤'),
             ),
           ),
           const SizedBox(width: 8),
-          Flexible(
+          Expanded(
             child: buildTab(
               MainDialMode.hexagrams,
               _localized('卦盘', 'Hexagram dial', '卦盤'),
@@ -1191,9 +1462,13 @@ class _ClockPageState extends State<ClockPage>
     );
   }
 
-  void _changeClockScale(double delta) {
+  void _changeClockScale(
+    double delta, {
+    required double minScale,
+    required double maxScale,
+  }) {
     setState(() {
-      _clockScale = (_clockScale + delta).clamp(0.9, 1.6);
+      _clockScale = (_clockScale + delta).clamp(minScale, maxScale);
     });
   }
 
@@ -1232,51 +1507,48 @@ class _ClockPageState extends State<ClockPage>
         : text;
   }
 
-  String _themePresetLabel(AppThemePreset themePreset) {
+  String _themePresetLabel(String themePreset) {
     return switch (themePreset) {
-      AppThemePreset.chronicleIndigo => _localized(
+      'chronicleIndigo' => _localized(
         '时序靛',
         'Chronicle Indigo',
         '時序藍',
         traditionalChinese: '時序靛',
       ),
-      AppThemePreset.jingshiJade => _localized(
+      'jingshiJade' => _localized(
         '经世青',
         'Jingshi Jade',
         '経世緑',
         traditionalChinese: '經世青',
       ),
-      AppThemePreset.moonPhaseGold => _localized(
-        '月相金',
-        'Moon Phase Gold',
-        '月相金',
-      ),
-      AppThemePreset.cinnabarRed => _localized(
+      'moonPhaseGold' => _localized('月相金', 'Moon Phase Gold', '月相金'),
+      'cinnabarRed' => _localized(
         '朱砂红',
         'Cinnabar Red',
         '朱砂赤',
         traditionalChinese: '朱砂紅',
       ),
-      AppThemePreset.midnightInk => _localized(
+      'midnightInk' => _localized(
         '子夜墨',
         'Midnight Ink',
         '真夜中の墨',
         traditionalChinese: '子夜墨',
       ),
-      AppThemePreset.bambooShade => _localized(
+      'bambooShade' => _localized(
         '幽篁青',
         'Bamboo Shade',
         '幽篁の緑',
         traditionalChinese: '幽篁青',
       ),
+      _ => themePreset,
     };
   }
 
-  String _themeOptionLabel(AppThemeOption themeOption) {
-    final brightnessLabel = themeOption.themeMode == ThemeMode.dark
+  String _themeOptionLabel(AppThemeConfig theme) {
+    final brightnessLabel = theme.themeMode == ThemeMode.dark
         ? _localized('深色', 'Dark', 'ダーク', traditionalChinese: '深色')
         : _localized('亮色', 'Light', 'ライト', traditionalChinese: '亮色');
-    return '${_themePresetLabel(themeOption.preset)} $brightnessLabel';
+    return '${_themePresetLabel(theme.preset)} $brightnessLabel';
   }
 
   String _toTraditionalChinese(String text) {
@@ -1370,7 +1642,14 @@ class _ClockPageState extends State<ClockPage>
   ClockDialRing? _clockRingAt(Offset position, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final outerRadius = size.shortestSide / 2 - 10;
-    final hourRadius = outerRadius * ClockRadiusFactors.hourBase;
+    final responsive = widget.theme.ui.responsive;
+    final isMobile =
+        MediaQuery.sizeOf(context).width < responsive.breakpoint &&
+        responsive.mobileLayout == 'singleColumn';
+    final hourBaseFactor = isMobile
+        ? responsive.mobileMainDialRadiusFactor
+        : ClockRadiusFactors.hourBase;
+    final hourRadius = outerRadius * hourBaseFactor;
     final secondsCenter =
         center +
         Offset(0, -hourRadius * ClockRadiusFactors.secondsVerticalOffset);
@@ -1388,11 +1667,14 @@ class _ClockPageState extends State<ClockPage>
       if (ring == ClockDialRing.seconds || !_visibleClockRings.contains(ring)) {
         continue;
       }
-      final hoverRadius = ring.hoverRadiusFor(outerRadius);
+      final hoverRadius = ring.hoverRadiusFor(
+        outerRadius,
+        hourBase: hourBaseFactor,
+      );
       final ringDistance = (distance - hoverRadius).abs();
       final hitTolerance = max(
         ring.hitTolerance,
-        ring.hoverWidthFor(outerRadius) / 2,
+        ring.hoverWidthFor(outerRadius, hourBase: hourBaseFactor) / 2,
       );
       if (ringDistance <= hitTolerance && ringDistance < closestDistance) {
         closestRing = ring;

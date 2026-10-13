@@ -23,7 +23,7 @@ extension ClockPainterFeaturedEffects on ClockPainter {
         style: TextStyle(
           color: const Color(0xFF6C3483).withValues(alpha: pulse),
           fontWeight: FontWeight.w800,
-          fontSize: 12,
+          fontSize: rotatingBranchFontSize,
           fontFamily: 'Microsoft YaHei',
           shadows: [
             Shadow(color: Colors.white.withValues(alpha: pulse), blurRadius: 3),
@@ -37,7 +37,7 @@ extension ClockPainterFeaturedEffects on ClockPainter {
                 : language == DisplayLanguage.traditionalChinese
                 ? '時'
                 : '时',
-            style: const TextStyle(fontSize: 12),
+            style: TextStyle(fontSize: rotatingBranchFontSize),
           ),
         ],
       );
@@ -87,7 +87,7 @@ extension ClockPainterFeaturedEffects on ClockPainter {
           text: generalName[characterIndex],
           style: TextStyle(
             color: const Color(0xFF7D6608).withValues(alpha: pulse),
-            fontSize: 16,
+            fontSize: rotatingGeneralFontSize,
             fontWeight: FontWeight.w800,
             shadows: [
               Shadow(

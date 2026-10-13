@@ -25,7 +25,9 @@ extension ClockPainterNumbers on ClockPainter {
           fontWeight: i == currentHourNumber
               ? FontWeight.w900
               : FontWeight.bold,
-          fontSize: i == currentHourNumber ? 22 : 20,
+          fontSize: i == currentHourNumber
+              ? currentHourRingFontSize
+              : hourRingFontSize,
         ),
       );
 

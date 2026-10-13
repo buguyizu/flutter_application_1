@@ -18,14 +18,14 @@ extension _ClockPageSmallDials on _ClockPageState {
         }
       },
       child: SizedBox(
-        width: 176,
-        height: 210,
+        width: _smallDialWidthVal,
+        height: _smallDialHeightVal,
         child: Stack(
           alignment: Alignment.bottomCenter,
           children: [
             SizedBox(
-              width: 176,
-              height: 176,
+              width: _smallDialWidthVal,
+              height: _smallDialWidthVal,
               child: CustomPaint(
                 painter: ThirtySegmentDialPainter(
                   time.year - startYear,
@@ -50,14 +50,14 @@ extension _ClockPageSmallDials on _ClockPageState {
               right: 0,
               child: Text.rich(
                 TextSpan(
-                  style: const TextStyle(
-                    color: Color(0xFF37474F),
-                    fontSize: 12,
+                  style: TextStyle(
+                    color: _subtitleTextColor,
+                    fontSize: _subtitleFontSizeVal,
                   ),
                   children: [
                     TextSpan(
                       text: _shiLabel(time.year),
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: _subtitleFontWeight),
                     ),
                     TextSpan(text: _localized('（30年）', ' (30 years)', '（30年）')),
                   ],
@@ -75,9 +75,10 @@ extension _ClockPageSmallDials on _ClockPageState {
     final huiIndex = ClockCalculations.huiIndex(time);
     final huiLabel = _huiLabel(time);
     return SizedBox(
-      width: 176,
-      height: 210,
+      width: _smallDialWidthVal,
+      height: _smallDialHeightVal,
       child: MouseRegion(
+        key: const ValueKey('first_small_dial'),
         onExit: (_) => setState(() => _hoveredBranchIndex = null),
         onHover: (event) {
           final index = dialIndexAt(event.localPosition, 12);
@@ -89,8 +90,8 @@ extension _ClockPageSmallDials on _ClockPageState {
           alignment: Alignment.bottomCenter,
           children: [
             SizedBox(
-              width: 176,
-              height: 176,
+              width: _smallDialWidthVal,
+              height: _smallDialWidthVal,
               child: CustomPaint(
                 painter: BranchPlaceholderPainter(
                   _localized('日甲一元', 'Yuan 1', '日甲一元'),
@@ -146,8 +147,8 @@ extension _ClockPageSmallDials on _ClockPageState {
         ? null
         : _yunLabelForNumber(firstYunNumber + _hoveredYunIndex!);
     return SizedBox(
-      width: 176,
-      height: 210,
+      width: _smallDialWidthVal,
+      height: _smallDialHeightVal,
       child: MouseRegion(
         onExit: (_) => setState(() => _hoveredYunIndex = null),
         onHover: (event) {
@@ -160,8 +161,8 @@ extension _ClockPageSmallDials on _ClockPageState {
           alignment: Alignment.bottomCenter,
           children: [
             SizedBox(
-              width: 176,
-              height: 176,
+              width: _smallDialWidthVal,
+              height: _smallDialWidthVal,
               child: CustomPaint(
                 painter: ThirtySegmentDialPainter(
                   currentIndex,
@@ -211,8 +212,8 @@ extension _ClockPageSmallDials on _ClockPageState {
   Widget _buildTwelveSegmentDial(int currentIndex, int year) {
     final startYear = ClockCalculations.yearCycleStart(year);
     return SizedBox(
-      width: 176,
-      height: 210,
+      width: _smallDialWidthVal,
+      height: _smallDialHeightVal,
       child: MouseRegion(
         onExit: (_) => setState(() => _hoveredShiIndex = null),
         onHover: (event) {
@@ -225,8 +226,8 @@ extension _ClockPageSmallDials on _ClockPageState {
           alignment: Alignment.bottomCenter,
           children: [
             SizedBox(
-              width: 176,
-              height: 176,
+              width: _smallDialWidthVal,
+              height: _smallDialWidthVal,
               child: CustomPaint(
                 painter: TwelveSegmentDialPainter(
                   currentIndex,

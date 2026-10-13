@@ -8,10 +8,82 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
   HexagramDialPlaceholderPainter({
     required this.colorScheme,
     this.rotation = 0,
+    this.selectedName,
+    this.hoveredIndex,
+    this.fontScale = 1,
+    required this.currentYear,
+    this.showSovereignHuiLabels = false,
   });
 
   final ColorScheme colorScheme;
   final double rotation;
+  final String? selectedName;
+  final int? hoveredIndex;
+  final double fontScale;
+  final int currentYear;
+  final bool showSovereignHuiLabels;
+
+  static const sovereignHuiByHexagram = <String, String>{
+    '复': '子会',
+    '临': '丑会',
+    '泰': '寅会',
+    '大壮': '卯会',
+    '夬': '辰会',
+    '乾': '巳会',
+    '姤': '午会',
+    '遯': '未会',
+    '否': '申会',
+    '观': '酉会',
+    '剥': '戌会',
+    '坤': '亥会',
+  };
+
+  static const _yearsByHexagram = <String, String>{
+    '恒': '2014\n2029\n2054',
+    '革': '2015\n2062',
+    '丰': '2016\n2057',
+    '明夷': '2017\n2020\n2052',
+    '贲': '2018\n2021\n2072',
+    '既济': '2019\n2022\n2047',
+    '家人': '2023',
+    '小过': '2024',
+    '随': '2025\n2063',
+    '姤': '2026\n2064',
+    '大过': '2027\n2059',
+    '鼎': '2028',
+    '巽': '2030',
+    '井': '2031\n2044',
+    '蛊': '2032\n2069',
+    '升': '2033\n2049',
+    '讼': '2034',
+    '困': '2035',
+    '未济': '2036',
+    '解': '2037',
+    '涣': '2038',
+    '蒙': '2039',
+    '师': '2040',
+    '遯': '2041',
+    '咸': '2042',
+    '旅': '2043',
+    '需': '2045',
+    '节': '2046',
+    '屯': '2048',
+    '泰': '2050',
+    '临': '2051',
+    '复': '2053',
+    '大壮': '2055',
+    '归妹': '2056',
+    '震': '2058',
+    '夬': '2060',
+    '兑': '2061',
+    '乾': '2065',
+    '履': '2066',
+    '同人': '2067',
+    '无妄': '2068',
+    '大畜': '2070',
+    '损': '2071',
+    '颐': '2073',
+  };
 
   static const _names = <String>[
     '乾',
@@ -230,7 +302,7 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
 
     canvas.drawCircle(
       center,
-      radius,
+      outerRingRadius,
       Paint()..color = colorScheme.surfaceContainerLowest,
     );
     final alternatingBandPaint = Paint()
@@ -247,6 +319,54 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
         alternatingBandPaint,
       );
     }
+    if (selectedName != null) {
+      final selectedIndex = _circleNames.indexOf(selectedName!);
+      if (selectedIndex >= 0) {
+        canvas.drawArc(
+          Rect.fromCircle(center: center, radius: radius * 0.82),
+          startAngle + selectedIndex * segmentAngle,
+          segmentAngle,
+          false,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = radius * 0.28
+            ..strokeCap = StrokeCap.butt
+            ..color = const Color(0xFFBDE3F8),
+        );
+        canvas.drawArc(
+          Rect.fromCircle(center: center, radius: outerRingRadius - 1.5),
+          startAngle + selectedIndex * segmentAngle,
+          segmentAngle,
+          false,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3
+            ..strokeCap = StrokeCap.butt
+            ..color = const Color(0xFFBDE3F8),
+        );
+      }
+    }
+    if (hoveredIndex != null && hoveredIndex! >= 0 && hoveredIndex! < 64) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius * 0.82),
+        startAngle + hoveredIndex! * segmentAngle,
+        segmentAngle,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = radius * 0.28
+          ..strokeCap = StrokeCap.butt
+          ..color = const Color(0xFFB2EBF2).withValues(alpha: 0.68),
+      );
+    }
+    canvas.drawCircle(
+      center,
+      radius * 0.68,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..color = colorScheme.outline.withValues(alpha: 0.55),
+    );
     canvas.drawCircle(
       center,
       outerRingRadius,
@@ -283,7 +403,7 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
               text: name.split('').join('\n'),
               style: TextStyle(
                 color: colorScheme.onSurface,
-                fontSize: 16,
+                fontSize: 16 * fontScale,
                 fontWeight: FontWeight.normal,
               ),
             )
@@ -297,7 +417,7 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
               text: symbol,
               style: TextStyle(
                 color: colorScheme.onSurface,
-                fontSize: 26,
+                fontSize: 26 * fontScale,
                 fontFamily: 'Noto Sans Symbols 2',
               ),
             )
@@ -326,6 +446,93 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
         Offset(-symbolPainter.width / 2, -symbolPainter.height / 2),
       );
       canvas.restore();
+
+      final showSovereignHuiLabels = this.showSovereignHuiLabels;
+      final years = _yearsByHexagram[name];
+      if (years != null && !showSovereignHuiLabels) {
+        final isYearHighlighted = name == selectedName || index == hoveredIndex;
+        final yearLabels = years.split('\n');
+        final yearsPainter = TextPainter(
+          text: TextSpan(
+            style: TextStyle(
+              color: isYearHighlighted
+                  ? const Color(0xFF2878A8)
+                  : colorScheme.onSurface.withValues(alpha: 0.78),
+              fontSize: (isYearHighlighted ? 11 : 9) * fontScale,
+            ),
+            children: yearLabels
+                .asMap()
+                .entries
+                .map((yearEntry) {
+                  final isCurrentYear =
+                      yearEntry.value == currentYear.toString();
+                  return TextSpan(
+                    text: yearEntry.key == yearLabels.length - 1
+                        ? yearEntry.value
+                        : '${yearEntry.value}\n',
+                    style: TextStyle(
+                      color: isYearHighlighted
+                          ? const Color(0xFF2878A8)
+                          : isCurrentYear
+                          ? colorScheme.primary
+                          : colorScheme.onSurface.withValues(alpha: 0.78),
+                      fontSize:
+                          (isYearHighlighted || isCurrentYear ? 11 : 9) *
+                          fontScale,
+                      fontWeight: isYearHighlighted || isCurrentYear
+                          ? FontWeight.w900
+                          : FontWeight.normal,
+                    ),
+                  );
+                })
+                .toList(growable: false),
+          ),
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.center,
+        )..layout(maxWidth: 42);
+        final yearsPosition = Offset(
+          center.dx + cos(angle) * (outerRingRadius + 18),
+          center.dy + sin(angle) * (outerRingRadius + 18),
+        );
+        canvas.save();
+        canvas.translate(yearsPosition.dx, yearsPosition.dy);
+        canvas.rotate(-rotation);
+        yearsPainter.paint(
+          canvas,
+          Offset(-yearsPainter.width / 2, -yearsPainter.height / 2),
+        );
+        canvas.restore();
+      }
+
+      if (showSovereignHuiLabels) {
+        final hui = sovereignHuiByHexagram[name];
+        if (hui != null) {
+          final huiPainter = TextPainter(
+            text: TextSpan(
+              text: '$hui·$name',
+              style: TextStyle(
+                color: colorScheme.primary,
+                fontSize: 12 * fontScale,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+            textAlign: TextAlign.center,
+          )..layout(maxWidth: 52);
+          final huiPosition = Offset(
+            center.dx + cos(angle) * (outerRingRadius + 18),
+            center.dy + sin(angle) * (outerRingRadius + 18),
+          );
+          canvas.save();
+          canvas.translate(huiPosition.dx, huiPosition.dy);
+          canvas.rotate(-rotation);
+          huiPainter.paint(
+            canvas,
+            Offset(-huiPainter.width / 2, -huiPainter.height / 2),
+          );
+          canvas.restore();
+        }
+      }
     }
 
     canvas.restore();
@@ -334,10 +541,15 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant HexagramDialPlaceholderPainter oldDelegate) =>
       oldDelegate.colorScheme != colorScheme ||
-      oldDelegate.rotation != rotation;
+      oldDelegate.rotation != rotation ||
+      oldDelegate.selectedName != selectedName ||
+      oldDelegate.hoveredIndex != hoveredIndex ||
+      oldDelegate.fontScale != fontScale ||
+      oldDelegate.currentYear != currentYear ||
+      oldDelegate.showSovereignHuiLabels != showSovereignHuiLabels;
 }
 
-void _drawSmallDialHoverGlow(
+void _drawSmallDialHoverCenter(
   Canvas canvas,
   Offset center,
   Rect ringRect,
@@ -349,12 +561,8 @@ void _drawSmallDialHoverGlow(
   }
   canvas.drawCircle(
     center,
-    ringRect.shortestSide / 2,
-    Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = ringWidth + 14
-      ..color = const Color(0xFFB2EBF2).withValues(alpha: 0.36)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    ringRect.shortestSide / 2 - ringWidth / 2,
+    Paint()..color = const Color(0xFFFFF2CC),
   );
 }
 
@@ -427,7 +635,7 @@ class BranchPlaceholderPainter extends CustomPainter {
         ..strokeWidth = ringWidth
         ..color = const Color(0xFFE4E9ED),
     );
-    _drawSmallDialHoverGlow(
+    _drawSmallDialHoverCenter(
       canvas,
       center,
       ringRect,
@@ -528,7 +736,6 @@ class BranchPlaceholderPainter extends CustomPainter {
           fontSize: 19,
           fontWeight: FontWeight.normal,
           fontFamily: 'Microsoft YaHei',
-          backgroundColor: Color(0xFFF5F7FA),
         ),
       ),
       textAlign: TextAlign.center,
@@ -549,7 +756,6 @@ class BranchPlaceholderPainter extends CustomPainter {
             fontSize: 13,
             fontWeight: FontWeight.normal,
             fontFamily: 'Microsoft YaHei',
-            backgroundColor: Color(0xFFF5F7FA),
           ),
         ),
         textAlign: TextAlign.center,
@@ -623,7 +829,7 @@ class ThirtySegmentDialPainter extends CustomPainter {
         ..strokeWidth = ringWidth
         ..color = const Color(0xFFE4E9ED),
     );
-    _drawSmallDialHoverGlow(
+    _drawSmallDialHoverCenter(
       canvas,
       center,
       ringRect,
@@ -743,7 +949,6 @@ class ThirtySegmentDialPainter extends CustomPainter {
           color: Color(0xFF37474F),
           fontSize: titleFontSize,
           fontWeight: FontWeight.normal,
-          backgroundColor: Color(0xFFF5F7FA),
         ),
       ),
       textAlign: TextAlign.center,
@@ -752,11 +957,7 @@ class ThirtySegmentDialPainter extends CustomPainter {
     final valuePainter = TextPainter(
       text: TextSpan(
         text: hoverLabel ?? currentLabel ?? '第${currentIndex + 1}格',
-        style: const TextStyle(
-          color: Color(0xFF37474F),
-          fontSize: 12,
-          backgroundColor: Color(0xFFF5F7FA),
-        ),
+        style: const TextStyle(color: Color(0xFF37474F), fontSize: 12),
       ),
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
@@ -857,7 +1058,7 @@ class TwelveSegmentDialPainter extends CustomPainter {
         ..strokeWidth = ringWidth
         ..color = const Color(0xFFE4E9ED),
     );
-    _drawSmallDialHoverGlow(
+    _drawSmallDialHoverCenter(
       canvas,
       center,
       ringRect,
@@ -973,7 +1174,6 @@ class TwelveSegmentDialPainter extends CustomPainter {
           color: Color(0xFF37474F),
           fontSize: 19,
           fontWeight: FontWeight.normal,
-          backgroundColor: Color(0xFFF5F7FA),
         ),
       ),
       textAlign: TextAlign.center,
@@ -986,7 +1186,6 @@ class TwelveSegmentDialPainter extends CustomPainter {
           color: Color(0xFF37474F),
           fontSize: 13,
           fontWeight: FontWeight.normal,
-          backgroundColor: Color(0xFFF5F7FA),
         ),
       ),
       textAlign: TextAlign.center,

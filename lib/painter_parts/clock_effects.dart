@@ -8,10 +8,12 @@ extension ClockPainterEffects on ClockPainter {
     double outerRadius,
   ) {
     final pulse = _rotationPulse();
-    final rayStartRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
-    final rayEndRadius = sqrt(
-      size.width * size.width + size.height * size.height,
+    final rayStartRadius = ClockDialRing.branchNumbers.radiusFor(
+      outerRadius,
+      hourBase: hourBaseFactor,
     );
+    final rayEndRadius =
+        max(size.width, size.height) * protectionRayReachFactor;
     const rayCount = 60;
     for (int index = 0; index < rayCount; index++) {
       final angle = -branchNumbersRotation + index * 2 * pi / rayCount;
@@ -44,8 +46,14 @@ extension ClockPainterEffects on ClockPainter {
     Offset center,
     double outerRadius,
   ) {
-    final branchRadius = ClockDialRing.branches.radiusFor(outerRadius);
-    final generalRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
+    final branchRadius = ClockDialRing.branches.radiusFor(
+      outerRadius,
+      hourBase: hourBaseFactor,
+    );
+    final generalRadius = ClockDialRing.branchNumbers.radiusFor(
+      outerRadius,
+      hourBase: hourBaseFactor,
+    );
     final bandRadius = (branchRadius + generalRadius) / 2;
     final bandWidth =
         generalRadius - branchRadius + (generalRadius - branchRadius) * 52 / 30;
@@ -128,8 +136,14 @@ extension ClockPainterEffects on ClockPainter {
     Offset center,
     double outerRadius,
   ) {
-    final branchRadius = ClockDialRing.branches.radiusFor(outerRadius);
-    final generalRadius = ClockDialRing.branchNumbers.radiusFor(outerRadius);
+    final branchRadius = ClockDialRing.branches.radiusFor(
+      outerRadius,
+      hourBase: hourBaseFactor,
+    );
+    final generalRadius = ClockDialRing.branchNumbers.radiusFor(
+      outerRadius,
+      hourBase: hourBaseFactor,
+    );
     final branchBandHalfWidth =
         branchRadius * ClockRadiusFactors.branchBandWidth / 2;
     final generalBandHalfWidth =

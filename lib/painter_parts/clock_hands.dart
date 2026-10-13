@@ -12,6 +12,7 @@ extension ClockPainterHands on ClockPainter {
     final minuteAngle = _degToRad(now.minute * 6);
     final secondAngle = _degToRad(now.second * 6);
     final isDarkTheme = colorScheme.brightness == Brightness.dark;
+    final showSeconds = _isVisible(ClockDialRing.seconds);
 
     final hourPaint = Paint()
       ..strokeWidth = 6
@@ -45,20 +46,24 @@ extension ClockPainterHands on ClockPainter {
         ..strokeCap = StrokeCap.round
         ..color = colorScheme.primary.withValues(alpha: 0.54)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-      final secondGlow = Paint()
-        ..strokeWidth = 5
-        ..strokeCap = StrokeCap.round
-        ..color = colorScheme.error.withValues(alpha: 0.58)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
       canvas.drawLine(center, hourEnd, hourGlow);
       canvas.drawLine(center, minuteEnd, minuteGlow);
-      canvas.drawLine(secondsCenter, secondEnd, secondGlow);
-      canvas.drawCircle(secondsCenter, 7, secondGlow);
+      if (showSeconds) {
+        final secondGlow = Paint()
+          ..strokeWidth = 5
+          ..strokeCap = StrokeCap.round
+          ..color = colorScheme.error.withValues(alpha: 0.58)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+        canvas.drawLine(secondsCenter, secondEnd, secondGlow);
+        canvas.drawCircle(secondsCenter, 7, secondGlow);
+      }
     }
 
     canvas.drawLine(center, hourEnd, hourPaint);
     canvas.drawLine(center, minuteEnd, minutePaint);
-    canvas.drawLine(secondsCenter, secondEnd, secondPaint);
-    canvas.drawCircle(secondsCenter, 3, secondPaint);
+    if (showSeconds) {
+      canvas.drawLine(secondsCenter, secondEnd, secondPaint);
+      canvas.drawCircle(secondsCenter, 3, secondPaint);
+    }
   }
 }

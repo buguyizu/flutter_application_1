@@ -26,6 +26,12 @@ class ClockPainter extends CustomPainter {
   final ColorScheme colorScheme;
   final bool isBranchNumbersRotating;
   final double branchNumbersRotation;
+  final double hourRingFontSize;
+  final double currentHourRingFontSize;
+  final double rotatingGeneralFontSize;
+  final double rotatingBranchFontSize;
+  final double hourBaseFactor;
+  final double protectionRayReachFactor;
   String _branchLabel(int index) => switch (language) {
     DisplayLanguage.chinese => earthBranches[index],
     DisplayLanguage.traditionalChinese => earthBranches[index],
@@ -106,6 +112,12 @@ class ClockPainter extends CustomPainter {
     required this.colorScheme,
     this.isBranchNumbersRotating = false,
     this.branchNumbersRotation = 0,
+    this.hourRingFontSize = 20,
+    this.currentHourRingFontSize = 22,
+    this.rotatingGeneralFontSize = 16,
+    this.rotatingBranchFontSize = 12,
+    this.hourBaseFactor = ClockRadiusFactors.hourBase,
+    this.protectionRayReachFactor = 1.41421356237,
   });
 
   bool _isVisible(ClockDialRing ring) => visibleRings.contains(ring);
@@ -156,7 +168,7 @@ class ClockPainter extends CustomPainter {
     }
 
     // 3. 24小时表盘 (原内容作为核心) - 位于月份圈内侧
-    double hourRadius = maxRadius * ClockRadiusFactors.hourBase;
+    double hourRadius = maxRadius * hourBaseFactor;
 
     // 小秒盘跟随 hourRadius 调整
     final secondsCenter =
@@ -208,9 +220,10 @@ class ClockPainter extends CustomPainter {
       _drawRingHoverBand(
         canvas,
         center,
-        ClockDialRing.days.hoverRadiusFor(maxRadius),
+        ClockDialRing.days.hoverRadiusFor(maxRadius, hourBase: hourBaseFactor),
         ClockDialRing.days,
         maxRadius,
+        hourBase: hourBaseFactor,
       );
     }
     if (hoveredRing == ClockDialRing.minutes &&
@@ -218,9 +231,13 @@ class ClockPainter extends CustomPainter {
       _drawRingHoverBand(
         canvas,
         center,
-        ClockDialRing.minutes.hoverRadiusFor(maxRadius),
+        ClockDialRing.minutes.hoverRadiusFor(
+          maxRadius,
+          hourBase: hourBaseFactor,
+        ),
         ClockDialRing.minutes,
         maxRadius,
+        hourBase: hourBaseFactor,
       );
     }
 
@@ -262,7 +279,14 @@ class ClockPainter extends CustomPainter {
         ring == ClockDialRing.seconds) {
       return;
     }
-    _drawRingHoverBand(canvas, center, ring.radiusFor(radius), ring, radius);
+    _drawRingHoverBand(
+      canvas,
+      center,
+      ring.radiusFor(radius, hourBase: hourBaseFactor),
+      ring,
+      radius,
+      hourBase: hourBaseFactor,
+    );
   }
 
   void _drawRingHoverBand(
@@ -270,10 +294,14 @@ class ClockPainter extends CustomPainter {
     Offset center,
     double ringRadius,
     ClockDialRing ring,
-    double outerRadius,
-  ) {
-    final hoverWidth = ring.hoverWidthFor(outerRadius);
-    final glowExtension = ring.hoverGlowExtensionFor(outerRadius);
+    double outerRadius, {
+    double hourBase = ClockRadiusFactors.hourBase,
+  }) {
+    final hoverWidth = ring.hoverWidthFor(outerRadius, hourBase: hourBase);
+    final glowExtension = ring.hoverGlowExtensionFor(
+      outerRadius,
+      hourBase: hourBase,
+    );
     canvas.drawCircle(
       center,
       ringRadius + glowExtension / 2,
@@ -311,5 +339,11 @@ class ClockPainter extends CustomPainter {
       oldDelegate.language != language ||
       oldDelegate.colorScheme != colorScheme ||
       oldDelegate.isBranchNumbersRotating != isBranchNumbersRotating ||
-      oldDelegate.branchNumbersRotation != branchNumbersRotation;
+      oldDelegate.branchNumbersRotation != branchNumbersRotation ||
+      oldDelegate.hourRingFontSize != hourRingFontSize ||
+      oldDelegate.currentHourRingFontSize != currentHourRingFontSize ||
+      oldDelegate.rotatingGeneralFontSize != rotatingGeneralFontSize ||
+      oldDelegate.rotatingBranchFontSize != rotatingBranchFontSize ||
+      oldDelegate.hourBaseFactor != hourBaseFactor ||
+      oldDelegate.protectionRayReachFactor != protectionRayReachFactor;
 }

@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 
 import '../models/clock_models.dart';
+import '../models/theme_model.dart';
 
 class ClockHeaderActions extends StatelessWidget {
   const ClockHeaderActions({
     super.key,
     required this.language,
-    required this.themeOption,
+    required this.themeId,
     required this.onLanguageSelected,
     required this.onThemeSelected,
     required this.languageTooltip,
     required this.themeTooltip,
     required this.themeLabel,
+    required this.themes,
   });
 
   final DisplayLanguage language;
-  final AppThemeOption themeOption;
+  final String themeId;
   final ValueChanged<DisplayLanguage> onLanguageSelected;
-  final ValueChanged<AppThemeOption> onThemeSelected;
+  final ValueChanged<String> onThemeSelected;
   final String languageTooltip;
   final String themeTooltip;
-  final String Function(AppThemeOption) themeLabel;
+  final String Function(AppThemeConfig) themeLabel;
+  final List<AppThemeConfig> themes;
 
   @override
   Widget build(BuildContext context) {
@@ -57,34 +60,37 @@ class ClockHeaderActions extends StatelessWidget {
             ),
           ],
         ),
-        PopupMenuButton<AppThemeOption>(
+        PopupMenuButton<String>(
           padding: const EdgeInsets.all(6),
           iconSize: 22,
           tooltip: themeTooltip,
           icon: const Icon(Icons.palette_outlined),
           onSelected: onThemeSelected,
-          itemBuilder: (context) => AppThemeOption.values
-              .map(
-                (option) => CheckedPopupMenuItem<AppThemeOption>(
-                  value: option,
-                  checked: themeOption == option,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: option.preset.seedColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(themeLabel(option)),
-                    ],
+          itemBuilder: (context) => themes.map((theme) {
+            return PopupMenuItem<String>(
+              value: theme.id,
+              child: Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: theme.color,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-              )
-              .toList(),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      themeLabel(theme),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ),
       ],
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'clock_page.dart';
 import 'models/clock_models.dart';
+import 'models/theme_model.dart';
 
 class ClockApp extends StatefulWidget {
   const ClockApp({super.key});
@@ -11,13 +12,20 @@ class ClockApp extends StatefulWidget {
 }
 
 class _ClockAppState extends State<ClockApp> {
-  AppThemeOption _themeOption = AppThemeOption.chronicleIndigoLight;
+  final ThemeManager _themeManager = ThemeManager();
   late DisplayLanguage _language;
+  bool _themesLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _language = _initialDisplayLanguage();
+    _loadThemes();
+  }
+
+  Future<void> _loadThemes() async {
+    await _themeManager.loadThemes();
+    setState(() => _themesLoaded = true);
   }
 
   DisplayLanguage _initialDisplayLanguage() {
@@ -49,34 +57,33 @@ class _ClockAppState extends State<ClockApp> {
     setState(() => _language = language);
   }
 
-  void _changeThemeOption(AppThemeOption themeOption) {
-    setState(() => _themeOption = themeOption);
+  void _changeThemeOption(String themeId) {
+    if (!_themeManager.setThemeById(themeId)) return;
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_themesLoaded) {
+      return MaterialApp(
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
+
+    final theme = _themeManager.currentTheme;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: _title,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _themeOption.preset.seedColor,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _themeOption.preset.seedColor,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      themeMode: _themeOption.themeMode,
+      theme: theme.themeData,
+      darkTheme: theme.themeData,
+      themeMode: theme.themeMode,
       home: ClockPage(
         language: _language,
         onLanguageChanged: _changeLanguage,
-        themeOption: _themeOption,
-        onThemeOptionChanged: _changeThemeOption,
+        theme: theme,
+        themes: _themeManager.themes,
+        onThemeChanged: _changeThemeOption,
       ),
     );
   }
