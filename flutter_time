@@ -1,0 +1,14 @@
+server {
+    listen 80;
+    server_name 1.92.222.224;
+
+    location = /time {
+        return 301 /time/;
+    }
+
+    location /time/ {
+        root /var/www;
+        index index.html;
+        try_files $uri $uri/ /time/index.html;
+    }
+}

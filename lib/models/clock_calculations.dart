@@ -27,12 +27,20 @@ class ClockCalculations {
     return (time.year - historicalEraStartYear) ~/ yearsPerHui + 1;
   }
 
+  static int huiStartYear(int huiNumber) {
+    return historicalEraStartYear + (huiNumber - 1) * yearsPerHui;
+  }
+
   static int yunNumber(DateTime time) {
     return yunNumberForYear(time.year);
   }
 
   static int yunNumberForYear(int year) {
     return (year - historicalEraStartYear) ~/ yearsPerYun + 1;
+  }
+
+  static int yunStartYear(int yunNumber) {
+    return historicalEraStartYear + (yunNumber - 1) * yearsPerYun;
   }
 
   static int shiNumber(DateTime time) {

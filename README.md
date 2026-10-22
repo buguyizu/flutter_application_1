@@ -173,16 +173,67 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-访问方式：
+#### Nginx 配置文件位置（Ubuntu/Debian）
 
-```text
-http://你的域名/time/
+Nginx 主配置通常是 `/etc/nginx/nginx.conf`，其中会通过下面的配置加载站点：
+
+```nginx
+include /etc/nginx/sites-enabled/*;
 ```
 
-或：
+站点配置源文件通常放在 `/etc/nginx/sites-available/`，启用后通过软链接放在 `/etc/nginx/sites-enabled/`。本项目示例文件名为 `flutter_time`：
 
 ```text
-http://服务器IP/time/
+/etc/nginx/sites-available/flutter_time
+/etc/nginx/sites-enabled/flutter_time -> /etc/nginx/sites-available/flutter_time
+```
+
+创建或编辑站点源文件：
+
+```bash
+sudo nano /etc/nginx/sites-available/flutter_time
+```
+
+首次启用时创建软链接：
+
+```bash
+sudo ln -s /etc/nginx/sites-available/flutter_time /etc/nginx/sites-enabled/flutter_time
+```
+
+如果已有 80 端口默认站点（例如 `default`），应直接编辑该站点并合并下面的配置，不要再创建第二个 `default_server`。可用 `ls -l /etc/nginx/sites-enabled/` 查看已启用文件。修改后先执行 `sudo nginx -t`，通过后再执行 `sudo systemctl reload nginx`。
+
+#### Nginx 配置（IP 的 80 端口，`/time/`）
+
+Flutter Web 构建使用 `--base-href /time/`，部署文件应位于 `/var/www/time/`，例如：
+
+```text
+/var/www/time/index.html
+/var/www/time/main.dart.js
+/var/www/time/assets/
+```
+
+```nginx
+server {
+	listen 80 default_server;
+	server_name _;
+
+	location = /time {
+		return 301 /time/;
+	}
+
+	location /time/ {
+		root /var/www;
+		index index.html;
+		try_files $uri $uri/ /time/index.html;
+	}
+}
+```
+
+该配置通过 IP 的 HTTP 80 端口提供页面，访问地址为 `http://服务器IP/time/`。如果 Nginx 已有其他 `default_server`，请把这两个 `location` 合并到现有默认站点中，保证 80 端口只有一个 `default_server`。将配置放入 Nginx 已加载的站点配置后，检查并重载：
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
 ### 4. 直接本机预览构建结果

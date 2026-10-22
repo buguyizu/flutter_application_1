@@ -12,7 +12,11 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
     this.hoveredIndex,
     this.fontScale = 1,
     required this.currentYear,
+    required this.currentHuiIndex,
+    required this.currentYunNumber,
+    required this.currentYunIndex,
     this.showSovereignHuiLabels = false,
+    this.showCurrentHuiYunNumbers = false,
   });
 
   final ColorScheme colorScheme;
@@ -21,7 +25,11 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
   final int? hoveredIndex;
   final double fontScale;
   final int currentYear;
+  final int currentHuiIndex;
+  final int currentYunNumber;
+  final int currentYunIndex;
   final bool showSovereignHuiLabels;
+  final bool showCurrentHuiYunNumbers;
 
   static const sovereignHuiByHexagram = <String, String>{
     '复': '子会',
@@ -31,12 +39,67 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
     '夬': '辰会',
     '乾': '巳会',
     '姤': '午会',
-    '遯': '未会',
+    '遁': '未会',
     '否': '申会',
     '观': '酉会',
     '剥': '戌会',
     '坤': '亥会',
   };
+
+  static const _sovereignHuiLabels = <String>[
+    '子会',
+    '丑会',
+    '寅会',
+    '卯会',
+    '辰会',
+    '巳会',
+    '午会',
+    '未会',
+    '申会',
+    '酉会',
+    '戌会',
+    '亥会',
+  ];
+
+  static const mainHexagramsByHuiIndex = <int, List<String>>{
+    0: ['复', '颐', '屯', '益', '震'],
+    1: ['噬嗑', '随', '无妄', '明夷', '贲'],
+    2: ['既济', '家人', '丰', '革', '同人'],
+    3: ['临', '损', '节', '中孚', '归妹'],
+    4: ['睽', '兑', '履', '泰', '大畜'],
+    5: ['需', '小畜', '大壮', '大有', '夬'],
+    6: ['姤', '大过', '鼎', '恒', '巽'],
+    7: ['井', '蛊', '升', '讼', '困'],
+    8: ['未济', '解', '涣', '蒙', '师'],
+    9: ['遁', '咸', '旅', '小过', '渐'],
+    10: ['蹇', '艮', '谦', '否', '萃'],
+    11: ['晋', '豫', '观', '比', '剥'],
+  };
+
+  static List<int> currentHuiYunNumbers(
+    int currentYunNumber,
+    int currentYunIndex,
+  ) {
+    final firstYunNumber = currentYunNumber - currentYunIndex;
+    return List<int>.generate(
+      30,
+      (index) => firstYunNumber + index,
+      growable: false,
+    );
+  }
+
+  static Map<String, List<int>> currentHuiYunNumbersByHexagram({
+    required int currentHuiIndex,
+    required int currentYunNumber,
+    required int currentYunIndex,
+  }) {
+    final hexagrams = mainHexagramsByHuiIndex[currentHuiIndex]!;
+    final yunNumbers = currentHuiYunNumbers(currentYunNumber, currentYunIndex);
+    return {
+      for (var index = 0; index < hexagrams.length; index++)
+        hexagrams[index]: yunNumbers.sublist(index * 6, index * 6 + 6),
+    };
+  }
 
   static const _yearsByHexagram = <String, String>{
     '恒': '2014\n2029\n2054',
@@ -62,7 +125,7 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
     '涣': '2038',
     '蒙': '2039',
     '师': '2040',
-    '遯': '2041',
+    '遁': '2041',
     '咸': '2042',
     '旅': '2043',
     '需': '2045',
@@ -84,6 +147,37 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
     '损': '2071',
     '颐': '2073',
   };
+
+  static String? hexagramForYear(int year) {
+    final targetYear = year.toString();
+    for (final entry in _yearsByHexagram.entries) {
+      if (entry.value.split('\n').contains(targetYear)) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  static bool hasYearLabelsForYear(int year) => hexagramForYear(year) != null;
+
+  static int? hexagramIndexAt(
+    Offset position,
+    Size size, {
+    double rotation = 0,
+  }) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final offset = position - center;
+    final radius = size.shortestSide / 2 - 6;
+    if (offset.distance < radius * 0.68 || offset.distance > radius * 0.96) {
+      return null;
+    }
+
+    const segmentAngle = 2 * pi / 64;
+    const startAngle = -pi / 2 - segmentAngle;
+    final relativeAngle =
+        (atan2(offset.dy, offset.dx) - rotation - startAngle) % (2 * pi);
+    return (relativeAngle / segmentAngle).floor();
+  }
 
   static const _names = <String>[
     '乾',
@@ -118,7 +212,7 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
     '离',
     '咸',
     '恒',
-    '遯',
+    '遁',
     '大壮',
     '晋',
     '明夷',
@@ -238,7 +332,7 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
     '坎',
     '蒙',
     '师',
-    '遯',
+    '遁',
     '咸',
     '旅',
     '小过',
@@ -299,6 +393,7 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
     final symbolRadius = radius * 0.76;
     final segmentAngle = 2 * pi / 64;
     final startAngle = -pi / 2 - segmentAngle;
+    final hasCurrentYearLabels = hasYearLabelsForYear(currentYear);
 
     canvas.drawCircle(
       center,
@@ -449,7 +544,10 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
 
       final showSovereignHuiLabels = this.showSovereignHuiLabels;
       final years = _yearsByHexagram[name];
-      if (years != null && !showSovereignHuiLabels) {
+      if (years != null &&
+          hasCurrentYearLabels &&
+          !showSovereignHuiLabels &&
+          !showCurrentHuiYunNumbers) {
         final isYearHighlighted = name == selectedName || index == hoveredIndex;
         final yearLabels = years.split('\n');
         final yearsPainter = TextPainter(
@@ -507,13 +605,14 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
       if (showSovereignHuiLabels) {
         final hui = sovereignHuiByHexagram[name];
         if (hui != null) {
+          final isCurrentHui = hui == _sovereignHuiLabels[currentHuiIndex];
           final huiPainter = TextPainter(
             text: TextSpan(
-              text: '$hui·$name',
+              text: hui,
               style: TextStyle(
                 color: colorScheme.primary,
                 fontSize: 12 * fontScale,
-                fontWeight: FontWeight.bold,
+                fontWeight: isCurrentHui ? FontWeight.bold : FontWeight.normal,
               ),
             ),
             textDirection: TextDirection.ltr,
@@ -535,6 +634,56 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
       }
     }
 
+    if (showCurrentHuiYunNumbers) {
+      final huiHexagrams = mainHexagramsByHuiIndex[currentHuiIndex]!;
+      final yunNumbersByHexagram = currentHuiYunNumbersByHexagram(
+        currentHuiIndex: currentHuiIndex,
+        currentYunNumber: currentYunNumber,
+        currentYunIndex: currentYunIndex,
+      );
+      for (var groupIndex = 0; groupIndex < huiHexagrams.length; groupIndex++) {
+        final hexagram = huiHexagrams[groupIndex];
+        final hexagramIndex = _circleNames.indexOf(hexagram);
+        if (hexagramIndex < 0) {
+          continue;
+        }
+        final angle = startAngle + (hexagramIndex + 0.5) * segmentAngle;
+        final yunNumbers = yunNumbersByHexagram[hexagram]!;
+        for (var yunIndex = 0; yunIndex < yunNumbers.length; yunIndex++) {
+          final isCurrentYun = groupIndex * 6 + yunIndex == currentYunIndex;
+          final labelPainter = TextPainter(
+            text: TextSpan(
+              text: '${yunNumbers[yunIndex]}',
+              style: TextStyle(
+                color: isCurrentYun
+                    ? colorScheme.primary
+                    : groupIndex == currentYunIndex ~/ 6
+                    ? colorScheme.primary.withValues(alpha: 0.72)
+                    : colorScheme.onSurface,
+                fontSize: 8 * fontScale,
+                fontWeight: isCurrentYun ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+            textAlign: TextAlign.center,
+          )..layout(maxWidth: 28);
+          final labelRadius = outerRingRadius + 12 + yunIndex * 7;
+          final labelPosition = Offset(
+            center.dx + cos(angle) * labelRadius,
+            center.dy + sin(angle) * labelRadius,
+          );
+          canvas.save();
+          canvas.translate(labelPosition.dx, labelPosition.dy);
+          canvas.rotate(-rotation);
+          labelPainter.paint(
+            canvas,
+            Offset(-labelPainter.width / 2, -labelPainter.height / 2),
+          );
+          canvas.restore();
+        }
+      }
+    }
+
     canvas.restore();
   }
 
@@ -546,7 +695,11 @@ class HexagramDialPlaceholderPainter extends CustomPainter {
       oldDelegate.hoveredIndex != hoveredIndex ||
       oldDelegate.fontScale != fontScale ||
       oldDelegate.currentYear != currentYear ||
-      oldDelegate.showSovereignHuiLabels != showSovereignHuiLabels;
+      oldDelegate.currentHuiIndex != currentHuiIndex ||
+      oldDelegate.currentYunNumber != currentYunNumber ||
+      oldDelegate.currentYunIndex != currentYunIndex ||
+      oldDelegate.showSovereignHuiLabels != showSovereignHuiLabels ||
+      oldDelegate.showCurrentHuiYunNumbers != showCurrentHuiYunNumbers;
 }
 
 void _drawSmallDialHoverCenter(

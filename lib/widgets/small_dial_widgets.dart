@@ -10,6 +10,7 @@ extension _ClockPageSmallDials on _ClockPageState {
       (index) => '${startYear + index}',
     );
     return MouseRegion(
+      key: const ValueKey('fourth_small_dial'),
       onExit: (_) => setState(() => _hoveredYearIndex = null),
       onHover: (event) {
         final index = dialIndexAt(event.localPosition, 30);
@@ -17,55 +18,71 @@ extension _ClockPageSmallDials on _ClockPageState {
           setState(() => _hoveredYearIndex = index);
         }
       },
-      child: SizedBox(
-        width: _smallDialWidthVal,
-        height: _smallDialHeightVal,
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            SizedBox(
-              width: _smallDialWidthVal,
-              height: _smallDialWidthVal,
-              child: CustomPaint(
-                painter: ThirtySegmentDialPainter(
-                  time.year - startYear,
-                  title: _shiLabel(time.year),
-                  labels: yearLabels,
-                  labelIndices: List<int>.generate(30, (index) => index),
-                  startAtBottom: true,
-                  rotateLabels: true,
-                  titleFontSize: 19,
-                  currentLabelOffsetY: 12,
-                  hoveredIndex: _hoveredYearIndex,
-                  hoverLabel: _hoveredYearIndex == null
-                      ? null
-                      : _yearLabel(startYear + _hoveredYearIndex!),
-                  currentLabel: _yearLabel(time.year),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Text.rich(
-                TextSpan(
-                  style: TextStyle(
-                    color: _subtitleTextColor,
-                    fontSize: _subtitleFontSizeVal,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapUp: (details) {
+          final index = dialIndexAt(details.localPosition, 30);
+          if (index == null) {
+            return;
+          }
+          final selectedYear = startYear + index;
+          setState(() {
+            _selectedYear = selectedYear;
+            _now = _dateWithYear(_now, selectedYear);
+          });
+        },
+        child: SizedBox(
+          width: _smallDialWidthVal,
+          height: _smallDialHeightVal,
+          child: Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              SizedBox(
+                width: _smallDialWidthVal,
+                height: _smallDialWidthVal,
+                child: CustomPaint(
+                  painter: ThirtySegmentDialPainter(
+                    time.year - startYear,
+                    title: _shiLabel(time.year),
+                    labels: yearLabels,
+                    labelIndices: List<int>.generate(30, (index) => index),
+                    startAtBottom: true,
+                    rotateLabels: true,
+                    titleFontSize: 19,
+                    currentLabelOffsetY: 12,
+                    hoveredIndex: _hoveredYearIndex,
+                    hoverLabel: _hoveredYearIndex == null
+                        ? null
+                        : _yearLabel(startYear + _hoveredYearIndex!),
+                    currentLabel: _yearLabel(time.year),
                   ),
-                  children: [
-                    TextSpan(
-                      text: _shiLabel(time.year),
-                      style: TextStyle(fontWeight: _subtitleFontWeight),
-                    ),
-                    TextSpan(text: _localized('（30年）', ' (30 years)', '（30年）')),
-                  ],
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Text.rich(
+                  TextSpan(
+                    style: TextStyle(
+                      color: _subtitleTextColor,
+                      fontSize: _subtitleFontSizeVal,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: _shiLabel(time.year),
+                        style: TextStyle(fontWeight: _subtitleFontWeight),
+                      ),
+                      TextSpan(
+                        text: _localized('（30年）', ' (30 years)', '（30年）'),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -79,60 +96,82 @@ extension _ClockPageSmallDials on _ClockPageState {
       height: _smallDialHeightVal,
       child: MouseRegion(
         key: const ValueKey('first_small_dial'),
-        onExit: (_) => setState(() => _hoveredBranchIndex = null),
+        onEnter: (_) => setState(() => _isFirstDialHovered = true),
+        onExit: (_) => setState(() {
+          _isFirstDialHovered = false;
+          _hoveredBranchIndex = null;
+        }),
         onHover: (event) {
           final index = dialIndexAt(event.localPosition, 12);
           if (index != _hoveredBranchIndex) {
             setState(() => _hoveredBranchIndex = index);
           }
         },
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            SizedBox(
-              width: _smallDialWidthVal,
-              height: _smallDialWidthVal,
-              child: CustomPaint(
-                painter: BranchPlaceholderPainter(
-                  _localized('日甲一元', 'Yuan 1', '日甲一元'),
-                  huiIndex,
-                  subtitle: huiLabel,
-                  language: _language,
-                  hoveredIndex: _hoveredBranchIndex,
-                  hoverLabel: _hoveredBranchIndex == null
-                      ? null
-                      : _huiLabelForNumber(
-                          ClockCalculations.huiNumber(time) +
-                              (_hoveredBranchIndex! - huiIndex),
-                        ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapUp: (details) {
+            final selectedHuiIndex = dialIndexAt(details.localPosition, 12);
+            if (selectedHuiIndex == null) {
+              return;
+            }
+            final selectedHuiNumber =
+                ClockCalculations.huiNumber(time) + selectedHuiIndex - huiIndex;
+            final selectedHuiYear = ClockCalculations.huiStartYear(
+              selectedHuiNumber,
+            );
+            setState(() {
+              _selectedYear = selectedHuiYear;
+              _now = _dateWithYear(_now, selectedHuiYear);
+            });
+          },
+          child: Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              SizedBox(
+                width: _smallDialWidthVal,
+                height: _smallDialWidthVal,
+                child: CustomPaint(
+                  painter: BranchPlaceholderPainter(
+                    _localized('日甲一元', 'Yuan 1', '日甲一元'),
+                    huiIndex,
+                    subtitle: huiLabel,
+                    language: _language,
+                    hoveredIndex: _hoveredBranchIndex,
+                    hoverLabel: _hoveredBranchIndex == null
+                        ? null
+                        : _huiLabelForNumber(
+                            ClockCalculations.huiNumber(time) +
+                                (_hoveredBranchIndex! - huiIndex),
+                          ),
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Text.rich(
-                TextSpan(
-                  style: TextStyle(color: Color(0xFF37474F), fontSize: 12),
-                  children: [
-                    TextSpan(
-                      text: _localized('日甲一元', 'Yuan 1', '日甲一元'),
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: _localized(
-                        '（12会-129600年）',
-                        ' (12 Hui - 129,600 years)',
-                        '（12会・129,600年）',
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Text.rich(
+                  TextSpan(
+                    style: TextStyle(color: Color(0xFF37474F), fontSize: 12),
+                    children: [
+                      TextSpan(
+                        text: _localized('日甲一元', 'Yuan 1', '日甲一元'),
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  ],
+                      TextSpan(
+                        text: _localized(
+                          '（12会-129600年）',
+                          ' (12 Hui - 129,600 years)',
+                          '（12会・129,600年）',
+                        ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -150,60 +189,82 @@ extension _ClockPageSmallDials on _ClockPageState {
       width: _smallDialWidthVal,
       height: _smallDialHeightVal,
       child: MouseRegion(
-        onExit: (_) => setState(() => _hoveredYunIndex = null),
+        key: const ValueKey('second_small_dial'),
+        onEnter: (_) => setState(() => _isSecondDialHovered = true),
+        onExit: (_) => setState(() {
+          _isSecondDialHovered = false;
+          _hoveredYunIndex = null;
+        }),
         onHover: (event) {
           final index = dialIndexAt(event.localPosition, 30);
           if (index != _hoveredYunIndex) {
             setState(() => _hoveredYunIndex = index);
           }
         },
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            SizedBox(
-              width: _smallDialWidthVal,
-              height: _smallDialWidthVal,
-              child: CustomPaint(
-                painter: ThirtySegmentDialPainter(
-                  currentIndex,
-                  title: huiLabel,
-                  labels: List<String>.generate(
-                    30,
-                    (index) => '${firstYunNumber + index}',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapUp: (details) {
+            final selectedIndex = dialIndexAt(details.localPosition, 30);
+            if (selectedIndex == null) {
+              return;
+            }
+            final selectedYunNumber = firstYunNumber + selectedIndex;
+            final selectedYunYear = ClockCalculations.yunStartYear(
+              selectedYunNumber,
+            );
+            setState(() {
+              _selectedYear = selectedYunYear;
+              _now = _dateWithYear(_now, selectedYunYear);
+            });
+          },
+          child: Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              SizedBox(
+                width: _smallDialWidthVal,
+                height: _smallDialWidthVal,
+                child: CustomPaint(
+                  painter: ThirtySegmentDialPainter(
+                    currentIndex,
+                    title: huiLabel,
+                    labels: List<String>.generate(
+                      30,
+                      (index) => '${firstYunNumber + index}',
+                    ),
+                    labelIndices: List<int>.generate(30, (index) => index),
+                    startAtBottom: true,
+                    hoveredIndex: _hoveredYunIndex,
+                    hoverLabel: hoverLabel,
+                    currentLabel: yunLabel,
                   ),
-                  labelIndices: List<int>.generate(30, (index) => index),
-                  startAtBottom: true,
-                  hoveredIndex: _hoveredYunIndex,
-                  hoverLabel: hoverLabel,
-                  currentLabel: yunLabel,
                 ),
               ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Text.rich(
-                TextSpan(
-                  style: TextStyle(color: Color(0xFF37474F), fontSize: 12),
-                  children: [
-                    TextSpan(
-                      text: huiLabel,
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: _localized(
-                        '（30运-10800年）',
-                        ' (30 Yun - 10,800 years)',
-                        '（30運・10,800年）',
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Text.rich(
+                  TextSpan(
+                    style: TextStyle(color: Color(0xFF37474F), fontSize: 12),
+                    children: [
+                      TextSpan(
+                        text: huiLabel,
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  ],
+                      TextSpan(
+                        text: _localized(
+                          '（30运-10800年）',
+                          ' (30 Yun - 10,800 years)',
+                          '（30運・10,800年）',
+                        ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -215,6 +276,7 @@ extension _ClockPageSmallDials on _ClockPageState {
       width: _smallDialWidthVal,
       height: _smallDialHeightVal,
       child: MouseRegion(
+        key: const ValueKey('third_small_dial'),
         onExit: (_) => setState(() => _hoveredShiIndex = null),
         onHover: (event) {
           final index = dialIndexAt(event.localPosition, 12);
@@ -222,58 +284,76 @@ extension _ClockPageSmallDials on _ClockPageState {
             setState(() => _hoveredShiIndex = index);
           }
         },
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            SizedBox(
-              width: _smallDialWidthVal,
-              height: _smallDialWidthVal,
-              child: CustomPaint(
-                painter: TwelveSegmentDialPainter(
-                  currentIndex,
-                  startYear,
-                  language: _language,
-                  title: _yunLabel(year),
-                  subtitle: _shiLabel(year),
-                  hoveredIndex: _hoveredShiIndex,
-                  hoverLabel: _hoveredShiIndex == null
-                      ? null
-                      : _shiLabel(
-                          year +
-                              (_hoveredShiIndex! - currentIndex) *
-                                  ClockCalculations.yearsPerShi,
-                        ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Text.rich(
-                TextSpan(
-                  style: const TextStyle(
-                    color: Color(0xFF37474F),
-                    fontSize: 12,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapUp: (details) {
+            final selectedShiIndex = dialIndexAt(details.localPosition, 12);
+            if (selectedShiIndex == null) {
+              return;
+            }
+            final selectedShiYear = ClockCalculations.yearCycleStart(
+              year +
+                  (selectedShiIndex - currentIndex) *
+                      ClockCalculations.yearsPerShi,
+            );
+            setState(() {
+              _selectedYear = selectedShiYear;
+              _now = _dateWithYear(_now, selectedShiYear);
+            });
+          },
+          child: Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              SizedBox(
+                width: _smallDialWidthVal,
+                height: _smallDialWidthVal,
+                child: CustomPaint(
+                  painter: TwelveSegmentDialPainter(
+                    currentIndex,
+                    startYear,
+                    language: _language,
+                    title: _yunLabel(year),
+                    subtitle: _shiLabel(year),
+                    hoveredIndex: _hoveredShiIndex,
+                    hoverLabel: _hoveredShiIndex == null
+                        ? null
+                        : _shiLabel(
+                            year +
+                                (_hoveredShiIndex! - currentIndex) *
+                                    ClockCalculations.yearsPerShi,
+                          ),
                   ),
-                  children: [
-                    TextSpan(
-                      text: _yunLabel(year),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: _localized(
-                        '（12世-360年）',
-                        ' (12 Shi - 360 years)',
-                        '（12世・360年）',
-                      ),
-                    ),
-                  ],
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Text.rich(
+                  TextSpan(
+                    style: const TextStyle(
+                      color: Color(0xFF37474F),
+                      fontSize: 12,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: _yunLabel(year),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text: _localized(
+                          '（12世-360年）',
+                          ' (12 Shi - 360 years)',
+                          '（12世・360年）',
+                        ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
